@@ -1,4 +1,4 @@
-# do not push .sqlite files to GitHub
+# do not push .env, api keys, or .sqlite files to GitHub
 *.sqlite
 *__pycache__
 *.py[cod]
@@ -15,5 +15,4 @@ public-endpoint.json
 app/static/robots.txt
 app/static/sitemap.xml
 *.DS_Store
-migrations
 Favicon.png
