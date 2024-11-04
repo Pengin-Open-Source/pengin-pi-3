@@ -1,11 +1,11 @@
 {% load static %}
-<!-- Template inheritance: this template is the parent, while others are the children-->
 <!DOCTYPE html>
 <html>
 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  {% block meta_description %}{% endblock %}
   {% block tags %}{% endblock %}
   <link rel="stylesheet" type="text/css" href="{% static 'main.css' %}">
   <link rel="stylesheet" type="text/css" href="{% static 'styles/calendar.css' %}">
@@ -76,16 +76,10 @@
   </main>
   <footer>
     <p>Tobu Pengin {{copyright|escape}}</p>
-    {# if chat_bool #}
-    {% include "chat_overlay/chatbutton.html" %}
-    {# endif #}
+    {#% include "chat_overlay/chatbutton.html" %#}
   </footer>
 
   <script src="{% static 'javascript/scripts.js' %}"></script>
-{#  <script src="{% static 'javascript/dayjs/1.11.10/dayjs.min.js' %}"></script>#}
-{#  <script src="{% static 'javascript/dayjs/plugin/weekday.js' %}"></script>#}
-{#  <script src="{% static 'javascript/dayjs/plugin/weekOfYear.js' %}"></script>#}
-{#  <script src="{% static 'javascript/calendar.js' %}"></script>  #}
 
   {% block captchaScript %} {% endblock %}
 </body>
