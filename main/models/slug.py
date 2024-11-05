@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+
 
 class Slug(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -16,16 +17,20 @@ class Slug(models.Model):
     meta_tags = models.CharField(max_length=300)
     meta_description = models.CharField(max_length=300)
     content = models.TextField()
-    date = models.DateField(default=datetime.now(datetime.timezone.utc))
+    date = models.DateField(default=datetime.now(timezone.utc))
     creator = models.ForeignKey("users.User", verbose_name="Creator", on_delete=models.SET_NULL, null=True)
+
 
     class Meta:
         verbose_name_plural = "Slugs"
 
-    def save(self, *args, **kwargs):
-        # Check if the record exists to determine if this is an update operation
+
+    def save(self, *args, user=None, **kwargs):
+        if user:
+            self.modify_user = user
+        self.modify_date = datetime.now(timezone.utc)
+        
         if self.pk and Slug.objects.filter(pk=self.pk).exists():
-            # Copy the current state to SlugHistory before updating
             SlugHistory.objects.create(
                 slug_id=self.id,
                 parent=self.parent,
@@ -35,9 +40,10 @@ class Slug(models.Model):
                 content=self.content,
                 date=self.date,
                 creator=self.creator,
-                date=self.date
+                date=self.date,
+                modify_date=self.modify_date,
+                modify_user=self.modify_user
             )
-        # Proceed with the save (create or update)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -45,7 +51,6 @@ class Slug(models.Model):
 
 
 class SlugHistory(models.Model):
-    # Reference to the original Slug
     id = models.UUIDField()
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="history_children")
     name = models.CharField(max_length=120)
@@ -54,10 +59,12 @@ class SlugHistory(models.Model):
     content = models.TextField()
     date = models.DateField()
     creator = models.ForeignKey("users.User", verbose_name="Creator", on_delete=models.SET_NULL, null=True)
-    date = models.DateTimeField()  # Timestamp of when this version was created in the history
+    date = models.DateTimeField()
+    
 
     class Meta:
         verbose_name_plural = "Slug Histories"
+
 
     def __str__(self):
         return f"History for {self.id} - {self.date}"
