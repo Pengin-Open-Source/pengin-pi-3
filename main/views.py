@@ -7,7 +7,7 @@ from util.mail import send_mail
 from django.utils.decorators import method_decorator
 from django.views import View
 from .forms import LoginForm, SignUpForm, PasswordResetForm, SetPasswordForm
-from .models.users import User
+from .models import User, Slug
 from datetime import datetime, timedelta
 import uuid
 from django_ratelimit.decorators import ratelimit
@@ -112,3 +112,54 @@ class PasswordResetView(View):
             else:
                 messages.error(request, 'Passwords do not match.')
         return redirect('reset_password', token=token)
+
+
+class SlugView(View):
+    def get(self, request, slug_path=""):
+        # Split the slug_path to allow for nested slugs
+        slug_names = slug_path.strip("/").split("/")
+
+        # Traverse the Slug hierarchy based on the path
+        current_slug = None
+        for name in slug_names:
+            try:
+                current_slug = Slug.objects.get(name=name, parent=current_slug)
+            except Slug.DoesNotExist:
+                raise Http404("Page not found")
+
+        if not current_slug:
+            raise Http404("Page not found")
+
+        # Check if user is an admin for context
+        is_admin = request.user.is_staff
+
+        # Pass data from the Slug object to the template
+        context = {
+            "title": current_slug.name,
+            "meta_tags": current_slug.meta_tags,
+            "meta_description": current_slug.meta_description,
+            "content": current_slug.content,
+            "is_admin": is_admin,
+            "page_type": current_slug.name,
+            "date": current_slug.date,
+            "creator": current_slug.creator,
+        }
+
+        # Render the template with the context data
+        return render(request, "home/slug_page.html", context)
+    
+    
+class SlugEditView(View):
+    def get (self, request):
+        pass
+    
+    def post(self, request, token):
+        pass
+    
+    
+class SlugCreateView(View):
+    def get (self, request):
+        pass
+    
+    def post(self, request, token):
+        pass

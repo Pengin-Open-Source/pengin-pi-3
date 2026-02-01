@@ -16,8 +16,10 @@ class Slug(models.Model):
     name = models.CharField(max_length=120)
     meta_tags = models.CharField(max_length=300)
     meta_description = models.CharField(max_length=300)
-    content = models.TextField()
-    date = models.DateField(default=datetime.now(timezone.utc))
+    template_name = models.CharField(max_length=300)
+    render_template = models.TextField()
+    json = models.TextField()
+    date = models.DateTimeField(default=datetime.now(timezone.utc))
     creator = models.ForeignKey("users.User", verbose_name="Creator", on_delete=models.SET_NULL, null=True)
 
 
@@ -37,10 +39,11 @@ class Slug(models.Model):
                 name=self.name,
                 meta_tags=self.meta_tags,
                 meta_description=self.meta_description,
-                content=self.content,
+                template_name=self.template_name,
+                render_template=self.render_template,
+                json=self.json,
                 date=self.date,
                 creator=self.creator,
-                date=self.date,
                 modify_date=self.modify_date,
                 modify_user=self.modify_user
             )
@@ -56,10 +59,12 @@ class SlugHistory(models.Model):
     name = models.CharField(max_length=120)
     meta_tags = models.CharField(max_length=300)
     meta_description = models.CharField(max_length=150)
-    content = models.TextField()
-    date = models.DateField()
-    creator = models.ForeignKey("users.User", verbose_name="Creator", on_delete=models.SET_NULL, null=True)
+    template_name = models.CharField(max_length=300)
+    render_template = models.TextField()
+    json = models.TextField()
     date = models.DateTimeField()
+    creator = models.ForeignKey("users.User", verbose_name="Creator", on_delete=models.SET_NULL, null=True)
+    modify_date = models.DateTimeField()
     
 
     class Meta:
