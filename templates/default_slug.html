@@ -1,0 +1,37 @@
+{# templates/slug_page.html #}
+
+{% extends "base.html" %} {# Or any main static layout #}
+
+{% block head %}
+  <title>{{ title }}</title>
+  <meta name="description" content="{{ meta_description }}">
+  <meta name="keywords" content="{{ meta_tags }}">
+{% endblock %}
+
+{% block content %}
+  <div class="slug-page">
+    <h1>{{ title }}</h1>
+    <p><em>Created by {{ creator }} on {{ date }}</em></p>
+
+    {# Insert dynamic render_template content safely #}
+    {% if dynamic_content %}
+      <div class="dynamic-content">
+        {% autoescape off %}
+          {{ dynamic_content }}
+        {% endautoescape %}
+      </div>
+    {% endif %}
+
+    {# Example of static content from the template itself #}
+    <div class="static-block">
+      <p>This is a static layout block in the template.</p>
+    </div>
+
+    {# Admin internal editing hints #}
+    {% if is_admin %}
+      <div class="admin-info">
+        <small>Admin view: this page can be edited via the Slug admin panel.</small>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

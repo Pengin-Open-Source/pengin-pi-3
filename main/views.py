@@ -12,6 +12,14 @@ from datetime import datetime, timedelta
 import uuid
 from django_ratelimit.decorators import ratelimit
 import os
+from django.views import View
+from django.shortcuts import render
+from django.http import Http404
+from django.template import Template, Context
+from .models import Slug
+from django.shortcuts import render
+from django_redis import get_redis_connection
+import json
 
 
 def generate_uuid():
@@ -115,11 +123,15 @@ class PasswordResetView(View):
 
 
 class SlugView(View):
+    """
+    Renders a Slug based on its path. Supports nested Slugs (parent/child hierarchy).
+    Uses the static template_name if defined and injects the dynamic render_template.
+    Only trusted users should be editing render_template content.
+    """
     def get(self, request, slug_path=""):
-        # Split the slug_path to allow for nested slugs
-        slug_names = slug_path.strip("/").split("/")
+        # Split the path for nested slugs
+        slug_names = [s for s in slug_path.strip("/").split("/") if s]
 
-        # Traverse the Slug hierarchy based on the path
         current_slug = None
         for name in slug_names:
             try:
@@ -130,23 +142,38 @@ class SlugView(View):
         if not current_slug:
             raise Http404("Page not found")
 
-        # Check if user is an admin for context
+        # Determine if user is admin (for internal controls or edit links)
         is_admin = request.user.is_staff
 
-        # Pass data from the Slug object to the template
+        # Render the dynamic template snippet (render_template) safely
+        dynamic_content = ""
+        if current_slug.render_template:
+            try:
+                template_obj = Template(current_slug.render_template)
+                dynamic_content = template_obj.render(Context({
+                    "slug": current_slug,
+                    "request": request,
+                    # Add any other context variables you want to expose
+                }))
+            except Exception as e:
+                dynamic_content = f"<pre>Error rendering dynamic template: {e}</pre>"
+
+        # Determine which template to use: custom template or default
+        template_to_use = current_slug.template_name or "default_slug.html"
+
         context = {
+            "slug": current_slug,
             "title": current_slug.name,
             "meta_tags": current_slug.meta_tags,
             "meta_description": current_slug.meta_description,
-            "content": current_slug.content,
+            "dynamic_content": dynamic_content,
             "is_admin": is_admin,
             "page_type": current_slug.name,
             "date": current_slug.date,
-            "creator": current_slug.creator,
+            "creator": current_slug.author,
         }
 
-        # Render the template with the context data
-        return render(request, "home/slug_page.html", context)
+        return render(request, template_to_use, context)
     
     
 class SlugEditView(View):
@@ -163,3 +190,62 @@ class SlugCreateView(View):
     
     def post(self, request, token):
         pass
+    
+    
+
+class RedisLoggingMixin:
+    """
+    Mixin to log requests to Redis automatically.
+    """
+    redis_prefix = "request_log"  # Redis key prefix
+    redis_expire = 3600            # Keep logs for 1 hour by default
+
+    def log_request(self, request):
+        redis_conn = get_redis_connection("default")
+        log_entry = {
+            "user_id": getattr(request.user, "id", None),
+            "username": getattr(request.user, "email", "Anonymous"),
+            "method": request.method,
+            "path": request.path,
+            "ip": self.get_client_ip(request),
+        }
+        # Use timestamp as part of key
+        import time
+        key = f"{self.redis_prefix}:{int(time.time()*1000)}"
+        redis_conn.set(key, json.dumps(log_entry), ex=self.redis_expire)
+
+    @staticmethod
+    def get_client_ip(request):
+        # Handles X-Forwarded-For for proxied setups
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR")
+
+
+class SuperTemplateView(RedisLoggingMixin, View):
+    """
+    Abstract view that logs requests and always renders with layout.html.
+    """
+
+    template_name = None  # Must be set in subclasses
+
+    def get_context_data(self, **kwargs):
+        """
+        Override in child classes to add context.
+        """
+        return kwargs
+
+    def render_to_response(self, request, context=None):
+        """
+        Wraps the context with layout.html
+        """
+        if context is None:
+            context = {}
+        context["super_template_content"] = self.template_name
+        return render(request, "layout.html", context)
+
+    def dispatch(self, request, *args, **kwargs):
+        # Log request first
+        self.log_request(request)
+        return super().dispatch(request, *args, **kwargs)
