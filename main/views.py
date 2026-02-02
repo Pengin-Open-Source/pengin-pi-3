@@ -20,6 +20,9 @@ from .models import Slug
 from django.shortcuts import render
 from django_redis import get_redis_connection
 import json
+from django.http import HttpResponse
+from django.template.loader import get_template
+from django.shortcuts import get_object_or_404
 
 
 def generate_uuid():
@@ -122,58 +125,54 @@ class PasswordResetView(View):
         return redirect('reset_password', token=token)
 
 
-class SlugView(View):
+class SlugView(SuperTemplateView):
     """
-    Renders a Slug based on its path. Supports nested Slugs (parent/child hierarchy).
-    Uses the static template_name if defined and injects the dynamic render_template.
-    Only trusted users should be editing render_template content.
+    Serve a Slug by rendering the static template first, then applying the
+    render_template (dynamic template) on top of it.
     """
-    def get(self, request, slug_path=""):
-        # Split the path for nested slugs
-        slug_names = [s for s in slug_path.strip("/").split("/") if s]
 
+    def get(self, request, slug_path=""):
+        # Resolve nested slugs
+        slug_names = slug_path.strip("/").split("/")
         current_slug = None
         for name in slug_names:
-            try:
-                current_slug = Slug.objects.get(name=name, parent=current_slug)
-            except Slug.DoesNotExist:
-                raise Http404("Page not found")
+            current_slug = get_object_or_404(Slug, name=name, parent=current_slug)
 
-        if not current_slug:
-            raise Http404("Page not found")
-
-        # Determine if user is admin (for internal controls or edit links)
+        # Admin flag
         is_admin = request.user.is_staff
 
-        # Render the dynamic template snippet (render_template) safely
-        dynamic_content = ""
-        if current_slug.render_template:
-            try:
-                template_obj = Template(current_slug.render_template)
-                dynamic_content = template_obj.render(Context({
-                    "slug": current_slug,
-                    "request": request,
-                    # Add any other context variables you want to expose
-                }))
-            except Exception as e:
-                dynamic_content = f"<pre>Error rendering dynamic template: {e}</pre>"
-
-        # Determine which template to use: custom template or default
-        template_to_use = current_slug.template_name or "default_slug.html"
-
-        context = {
-            "slug": current_slug,
+        # Prepare context for both static and dynamic templates
+        context_data = {
             "title": current_slug.name,
             "meta_tags": current_slug.meta_tags,
             "meta_description": current_slug.meta_description,
-            "dynamic_content": dynamic_content,
-            "is_admin": is_admin,
-            "page_type": current_slug.name,
             "date": current_slug.date,
             "creator": current_slug.author,
+            "is_admin": is_admin,
         }
 
-        return render(request, template_to_use, context)
+        # First, render static template if present
+        rendered = ""
+        if current_slug.template_name:
+            static_template = get_template(current_slug.template_name)
+            rendered = static_template.render(context_data, request)
+
+        # Then, render dynamic template if present
+        if current_slug.render_template:
+            dynamic_context = context_data.copy()
+            try:
+                # If render_template is JSON with named blocks
+                dynamic_blocks = json.loads(current_slug.render_template)
+                dynamic_context.update(dynamic_blocks)
+            except json.JSONDecodeError:
+                # fallback: treat as single 'main' block
+                dynamic_context["main"] = current_slug.render_template
+
+            # Use the already-rendered static template as the base
+            dynamic_template = Template(rendered or "{{ main|safe }}")
+            rendered = dynamic_template.render(Context(dynamic_context, autoescape=True))
+
+        return HttpResponse(rendered)
     
     
 class SlugEditView(View):
