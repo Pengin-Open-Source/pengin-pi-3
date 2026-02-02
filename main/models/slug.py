@@ -1,29 +1,35 @@
+# main/models/slug.py
 from django.db import models
 import uuid
 from django.conf import settings
-from django.utils import timezone
+
+from .mixins import HistoryMixin
+from .history import AbstractHistory
 
 
-class Slug(models.Model):
+class Slug(HistoryMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     parent = models.ForeignKey(
         "self",
         null=True,
         blank=True,
         on_delete=models.CASCADE,
-        related_name="children",
-        verbose_name="Parent Slug"
+        related_name="children"
     )
+
     name = models.CharField(max_length=120)
     meta_tags = models.CharField(max_length=300)
     meta_description = models.CharField(max_length=300)
-    template_name = models.CharField(max_length=300)
-    render_template = models.TextField()
-    json = models.TextField()
-    date = models.DateTimeField(auto_now_add=True)  # creation timestamp
+
+    template_name = models.CharField(max_length=300, blank=True)
+    render_template = models.TextField(blank=True)
+    json = models.TextField(blank=True)
+
+    date = models.DateTimeField(auto_now_add=True)
+
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        verbose_name="Author",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -33,70 +39,21 @@ class Slug(models.Model):
     class Meta:
         verbose_name_plural = "Slugs"
 
-    def save(self, *args, user=None, **kwargs):
-        # Save history if updating
-        if self.pk and Slug.objects.filter(pk=self.pk).exists():
-            SlugHistory.objects.create(
-                slug=self,
-                parent=self.parent,
-                name=self.name,
-                meta_tags=self.meta_tags,
-                meta_description=self.meta_description,
-                template_name=self.template_name,
-                render_template=self.render_template,
-                json=self.json,
-                date=self.date,
-                last_author=self.author,
-                modify_user=user  # the current user performing the change
-            )
-        super().save(*args, **kwargs)
-
     def __str__(self):
-        return f"{self.name}"
+        return self.name
 
 
-class SlugHistory(models.Model):
+class SlugHistory(AbstractHistory):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    slug = models.ForeignKey(
-        Slug,  # Reference the live slug
-        on_delete=models.CASCADE,
-        related_name="history_entries",
-        null=True
-    )
-    parent = models.ForeignKey(
+
+    object = models.ForeignKey(
         Slug,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="history_children"
-    )
-    name = models.CharField(max_length=120)
-    meta_tags = models.CharField(max_length=300)
-    meta_description = models.CharField(max_length=150)
-    template_name = models.CharField(max_length=300)
-    render_template = models.TextField()
-    json = models.TextField()
-    date = models.DateTimeField()  # copy the creation timestamp of the Slug
-    modify_date = models.DateTimeField(auto_now_add=True)  # timestamp of the history entry
-    last_author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        verbose_name="Last Author",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="slug_histories_as_last_author"
-    )
-    modify_user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        verbose_name="Modifier",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="slug_histories_as_modifier"
+        on_delete=models.CASCADE,
+        related_name="history"
     )
 
-    class Meta:
+    class Meta(AbstractHistory.Meta):
         verbose_name_plural = "Slug Histories"
 
     def __str__(self):
-        return f"History for Slug {self.slug.id} - {self.modify_date}"
+        return f"Slug {self.object_id} @ {self.changed_at}"
