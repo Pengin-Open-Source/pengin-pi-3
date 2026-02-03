@@ -1,7 +1,7 @@
 # forms.py
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models.users import User
+from main.models.users import User
 
 class LoginForm(AuthenticationForm):
     remember_me = forms.BooleanField(required=False)
