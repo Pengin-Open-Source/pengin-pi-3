@@ -6,8 +6,8 @@ from django.contrib import messages
 from util.mail import send_mail
 from django.utils.decorators import method_decorator
 from django.views import View
-from ..forms import LoginForm, SignUpForm, PasswordResetForm, SetPasswordForm
-from ..models import User, Slug
+from main.forms.auth import LoginForm, SignUpForm, PasswordResetForm, SetPasswordForm
+from main.models import User, Slug
 from datetime import datetime, timedelta
 import uuid
 from django_ratelimit.decorators import ratelimit
@@ -16,7 +16,6 @@ from django.views import View
 from django.shortcuts import render
 from django.http import Http404
 from django.template import Template, Context
-from ..models import Slug
 from django.shortcuts import render
 from django_redis import get_redis_connection
 import json
