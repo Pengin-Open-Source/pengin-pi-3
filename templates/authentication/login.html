@@ -28,5 +28,8 @@
             <label> Remember me</label>
         </div>
         <button class="primary-button" type="submit">Login</button>
+        {% if request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+        {% endif %}
     </form>
 {% endblock %}

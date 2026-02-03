@@ -22,26 +22,37 @@ import json
 from django.http import HttpResponse
 from django.template.loader import get_template
 from django.shortcuts import get_object_or_404
+from django.conf import settings
+from django.shortcuts import redirect
 
 
 def generate_uuid():
     return str(uuid.uuid4())
 
 
+
 class LoginView(View):
     def get(self, request):
         form = LoginForm()
-        return render(request, 'authentication/login.html', {'form': form, 'primary_title': 'Login'})
+        return render(
+            request,
+            'authentication/login.html',
+            {'form': form, 'primary_title': 'Login'}
+        )
 
-    # @ratelimit(key='ip', rate='3/minute', block=True)
     def post(self, request):
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('home_view')
-        messages.error(
-            request, 'Please check your login details and try again.')
+
+            # 1️⃣ honor ?next=
+            next_url = request.POST.get('next') or request.GET.get('next')
+
+            # 2️⃣ fallback to LOGIN_REDIRECT_URL
+            return redirect(next_url or settings.LOGIN_REDIRECT_URL)
+
+        messages.error(request, 'Please check your login details and try again.')
         return redirect('login')
 
 

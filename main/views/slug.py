@@ -54,7 +54,7 @@ class SlugView(SuperTemplateView):
 class SlugCreateView(View):
     def get(self, request):
         form = SlugForm()
-        return render(request, "slug/form.html", {
+        return render(request, "slug/slug.html", {
             "form": form,
             "action": "create",
         })
@@ -67,7 +67,7 @@ class SlugCreateView(View):
             slug.save()  # no history on create
             return redirect("slug_edit", slug_id=slug.id)
 
-        return render(request, "slug/form.html", {
+        return render(request, "slug/slug.html", {
             "form": form,
             "action": "create",
         })
@@ -79,7 +79,7 @@ class SlugEditView(View):
         slug = get_object_or_404(Slug, id=slug_id)
         form = SlugForm(instance=slug)
 
-        return render(request, "slug/form.html", {
+        return render(request, "slug/slug.html", {
             "form": form,
             "slug": slug,
             "action": "edit",
@@ -94,7 +94,7 @@ class SlugEditView(View):
             slug.save(user=request.user)  # 🔥 history snapshot
             return redirect("slug_edit", slug_id=slug.id)
 
-        return render(request, "slug/form.html", {
+        return render(request, "slug/slug.html", {
             "form": form,
             "slug": slug,
             "action": "edit",
