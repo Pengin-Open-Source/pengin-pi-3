@@ -3,6 +3,8 @@ from django.forms.models import model_to_dict
 from django.apps import apps
 from django.db import models
 from django.utils.timezone import now
+from django.core.serializers.json import DjangoJSONEncoder
+import json
 
 
 class HistoryMixin(models.Model):
@@ -26,11 +28,13 @@ class HistoryMixin(models.Model):
             fields=[f.name for f in model._meta.fields]
         )
 
-        history_model = self._get_history_model()
+        # convert UUIDs and other non-serializable objects
+        json_snapshot = json.dumps(data, cls=DjangoJSONEncoder)
 
+        history_model = self._get_history_model()
         history_model.objects.create(
             object=original,
-            snapshot=data,
+            snapshot=json_snapshot,
             last_author=getattr(original, "author", None),
             modify_user=user,
             changed_at=now(),

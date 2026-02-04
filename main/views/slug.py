@@ -10,17 +10,29 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from main.forms.slug import SlugForm
+from django.http import HttpResponseForbidden
 
 
 class SlugView(SuperTemplateView):
     def get(self, request, slug_path=""):
-        slug_names = slug_path.strip("/").split("/")
+        slug_names = [s for s in slug_path.strip("/").split("/") if s]
         current_slug = None
 
         for name in slug_names:
-            current_slug = get_object_or_404(
-                Slug, name=name, parent=current_slug
-            )
+            try:
+                current_slug = Slug.objects.get(
+                    name=name,
+                    parent=current_slug
+                )
+            except Slug.DoesNotExist:
+                return self.handle_missing_slug(request)
+
+        # Handle root ("/") with no slugs defined
+        if not slug_names and not current_slug:
+            try:
+                current_slug = Slug.objects.get(parent=None)
+            except Slug.DoesNotExist:
+                return self.handle_missing_slug(request)
 
         context = {
             "title": current_slug.name,
@@ -48,6 +60,13 @@ class SlugView(SuperTemplateView):
             rendered = dynamic_template.render(Context(context))
 
         return HttpResponse(rendered)
+
+    def handle_missing_slug(self, request):
+        if request.user.is_authenticated:
+            if request.user.is_staff:
+                return redirect("/slug/create")
+            return HttpResponseForbidden("403 Forbidden")
+        return redirect("/login")
 
 
 @method_decorator(login_required, name="dispatch")
@@ -79,7 +98,7 @@ class SlugEditView(View):
         slug = get_object_or_404(Slug, id=slug_id)
         form = SlugForm(instance=slug)
 
-        return render(request, "slug/slug.html", {
+        return render(request, "slug/slug_edit.html", {
             "form": form,
             "slug": slug,
             "action": "edit",
@@ -90,15 +109,16 @@ class SlugEditView(View):
         form = SlugForm(request.POST, instance=slug)
 
         if form.is_valid():
-            form.save(commit=False)
-            slug.save(user=request.user)  # 🔥 history snapshot
+            slug = form.save(commit=False)
+            slug.save(user=request.user)  # history snapshot
             return redirect("slug_edit", slug_id=slug.id)
 
-        return render(request, "slug/slug.html", {
+        return render(request, "slug/slug_edit.html", {
             "form": form,
             "slug": slug,
             "action": "edit",
         })
+
 
 
 @method_decorator(login_required, name="dispatch")

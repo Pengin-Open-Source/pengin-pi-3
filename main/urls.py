@@ -1,7 +1,7 @@
 # main/urls.py
 from django.contrib import admin
 from django.urls import path, include
-from .views import LoginView, SignupView, LogoutView, PasswordResetRequestView, PasswordResetView, SlugCreateView, SlugEditView, SlugDeleteView
+from .views import LoginView, SignupView, LogoutView, PasswordResetRequestView, PasswordResetView, SlugCreateView, SlugEditView, SlugDeleteView, SlugView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -21,7 +21,10 @@ urlpatterns = [
     path('generate-prt/', PasswordResetRequestView.as_view(), name='generate_prt'),
     path('reset-password/<str:token>/', PasswordResetView.as_view(), name='reset_password'),
     path('slug/create', SlugCreateView.as_view(), name='slug'),
-    path('slug/edit', SlugEditView.as_view(), name='slug'),
+    path('slug/edit/<uuid:slug_id>/', SlugEditView.as_view(), name='slug_edit'),
     path('slug/delete', SlugDeleteView.as_view(), name='slug_delete'),
-    #path('profile/', include('profiles.urls')), 
+    path('<path:slug_path>/', SlugView.as_view()),
+    path('', SlugView.as_view()),
 ]
+
+

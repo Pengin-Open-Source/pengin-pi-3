@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% load static %}
+
 {% block content %}
 <h1>{% if action == "edit" %}Edit{% else %}Create{% endif %} Slug</h1>
 
@@ -9,7 +10,7 @@
 
   {% for field in form %}
     <div>
-      <label>{{ field.label }}</label>
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
       {{ field }}
       {{ field.errors }}
     </div>
