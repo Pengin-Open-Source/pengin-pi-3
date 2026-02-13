@@ -7,6 +7,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 import json
 
 
+
 class HistoryMixin(models.Model):
     class Meta:
         abstract = True

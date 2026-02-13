@@ -3,7 +3,7 @@ import time
 from django.shortcuts import render
 from django.views import View
 from django_redis import get_redis_connection
-
+from django.core.serializers.json import DjangoJSONEncoder  # << added
 
 class RedisLoggingMixin:
     redis_prefix = "request_log"
@@ -19,7 +19,8 @@ class RedisLoggingMixin:
             "ip": self.get_client_ip(request),
         }
         key = f"{self.redis_prefix}:{int(time.time() * 1000)}"
-        redis_conn.set(key, json.dumps(log_entry), ex=self.redis_expire)
+        # Use DjangoJSONEncoder to serialize UUIDs, datetime, etc.
+        redis_conn.set(key, json.dumps(log_entry, cls=DjangoJSONEncoder), ex=self.redis_expire)
 
     @staticmethod
     def get_client_ip(request):
