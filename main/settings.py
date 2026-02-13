@@ -48,8 +48,14 @@ INSTALLED_APPS = [
     'django_redis',
     'markdownit',
     'macros',
-    # Add your apps here
+    # Add your apps below here:
     'main',
+    'home',
+    'about',
+    'events',
+    'forums',
+    'tickets',
+    'blogs'
 ]
 
 load_dotenv()
