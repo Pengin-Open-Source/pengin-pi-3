@@ -29,12 +29,11 @@ class HistoryMixin(models.Model):
         )
 
         # convert UUIDs and other non-serializable objects
-        json_snapshot = json.dumps(data, cls=DjangoJSONEncoder)
-
+        
         history_model = self._get_history_model()
         history_model.objects.create(
             object=original,
-            snapshot=json_snapshot,
+            snapshot=data,
             last_author=getattr(original, "author", None),
             modify_user=user,
             changed_at=now(),

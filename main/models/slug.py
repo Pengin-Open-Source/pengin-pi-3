@@ -57,3 +57,4 @@ class SlugHistory(AbstractHistory):
 
     def __str__(self):
         return f"Slug {self.object_id} @ {self.changed_at}"
+
