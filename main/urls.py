@@ -3,12 +3,14 @@ from django.contrib import admin
 from django.urls import path, include
 from .views import LoginView, SignupView, LogoutView, PasswordResetRequestView, PasswordResetView, SlugCreateView, SlugEditView, SlugDeleteView, SlugView
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    #path('', include('home.urls')),
-    #path('', include('about.urls')),
-    #path('', include('blogs.urls')),
-    #path('', include('applications.urls')),
+    path('', include('home.urls')),
+    path('', include('about.urls')),
+    path('', include('blogs.urls')),
+    path('', include('forums.urls')),
+    #path('', include('tickets.urls')),
     #path('products/', include('products.urls')),
     #path('orders/', include('orders.urls.orders')),
     #path('customers/', include('orders.urls.customers')),

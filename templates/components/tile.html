@@ -1,0 +1,27 @@
+<div class="tile-wrapper mb-4">
+  <div class="card tile-card shadow-sm h-100">
+    {% if image %}
+      <img src="{{ image }}" class="card-img-top tile-img" alt="">
+    {% endif %}
+
+    <div class="card-body">
+      {% if title %}
+        <h5 class="card-title">{{ title }}</h5>
+      {% endif %}
+
+      {% if subtitle %}
+        <h6 class="card-subtitle mb-2 text-muted">{{ subtitle }}</h6>
+      {% endif %}
+
+      <div class="card-text">
+        {{ content|safe }}
+      </div>
+    </div>
+
+    {% if footer %}
+      <div class="card-footer bg-transparent border-0">
+        {{ footer|safe }}
+      </div>
+    {% endif %}
+  </div>
+</div>

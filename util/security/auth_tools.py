@@ -1,4 +1,8 @@
 from functools import wraps
+from functools import wraps
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.conf import settings
 from django.http import HttpResponseForbidden
 
 
@@ -7,6 +11,15 @@ def group_required(group_name):
         @wraps(view_func)
         def wrapped_view(request, *args, **kwargs):
             # There is no group staff cannot access
+            if not request.user.is_authenticated:
+                return HttpResponseForbidden("<h1>Login required.</h1>")
+
+            if not request.user.is_staff:
+                return HttpResponseForbidden("<h1>You are not an admin.</h1>")
+
+            if not request.user.validated:
+                return HttpResponseForbidden("<h1>Admin account not validated.</h1>")
+
             if request.user.is_authenticated and request.user.validated and (request.user.is_staff or request.user.groups.filter(name=group_name).exists()):
                 return view_func(request, *args, **kwargs)
             else:
@@ -32,6 +45,22 @@ def is_admin_required(view_func):
     """
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
+        # 1️⃣ Not authenticated → redirect to login
+        if not request.user.is_authenticated:
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+
+        # 2️⃣ Not admin → 403
+        if not request.user.is_staff:
+            return HttpResponseForbidden("<h1>You are not an admin.</h1>")
+
+        # 3️⃣ Admin but not validated → redirect to their admin change page
+        if not getattr(request.user, "validated", False):
+            admin_url = reverse(
+                "admin:main_user_change",  # adjust app_label/model if needed
+                args=[request.user.pk],
+            )
+            return redirect(admin_url)
+        
         if request.user.is_authenticated and request.user.validated and request.user.is_staff:
             return view_func(request, *args, **kwargs)
         else:
