@@ -3,8 +3,6 @@ from django.forms.models import model_to_dict
 from django.apps import apps
 from django.db import models
 from django.utils.timezone import now
-from django.core.serializers.json import DjangoJSONEncoder
-import json
 
 
 

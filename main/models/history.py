@@ -1,10 +1,11 @@
 # main/models/history.py
 from django.db import models
 from django.conf import settings
+from util.utils import UUIDEncoder
 
 
 class AbstractHistory(models.Model):
-    snapshot = models.JSONField()
+    snapshot = models.JSONField(encoder=UUIDEncoder)
     changed_at = models.DateTimeField()
 
     last_author = models.ForeignKey(

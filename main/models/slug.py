@@ -42,6 +42,11 @@ class Slug(HistoryMixin, models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        # Force the slug name to lowercase to ensure URL consistency
+        self.name = self.name.lower()
+        super().save(*args, **kwargs)
+
 
 class SlugHistory(AbstractHistory):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -57,4 +62,3 @@ class SlugHistory(AbstractHistory):
 
     def __str__(self):
         return f"Slug {self.object_id} @ {self.changed_at}"
-

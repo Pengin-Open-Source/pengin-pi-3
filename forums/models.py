@@ -41,7 +41,7 @@ class Thread(models.Model):
                 thread_groups = original_thread.groups.all()
                 groups_snapshot = list(thread_groups.values('pk', 'name'))
                 thread_backup = ThreadHistory(thread_id=original_thread.pk, name=original_thread.name, date=original_thread.date,
-                                              user=original_thread.user.pk, roles=groups_snapshot, row_action=original_thread.row_action)
+                                              user=str(original_thread.user.pk), roles=groups_snapshot, row_action=original_thread.row_action)
                 thread_backup.save()
 
             # else: this is a newly created Thread/Forum don't save it to backup table yet
@@ -60,7 +60,7 @@ class Thread(models.Model):
             if save_method == 'DELETE':
                 # FYI, reusing groups_snapshot since it shouldn't have changed since the "last change" backup save
                 archived_thread = ThreadHistory(thread_id=self.pk, name=self.name, date=self.date,
-                                                user=self.user.pk, roles=groups_snapshot, row_action=self.row_action)
+                                                user=str(self.user.pk), roles=groups_snapshot, row_action=self.row_action)
                 archived_thread.save()
 
 
@@ -68,7 +68,7 @@ class ThreadHistory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     thread_id = models.UUIDField(db_index=True)
     name = models.CharField(max_length=100)
-    date = models.DateTimeField(default=timezone.now)
+    date = models.DateTimeField()
     user = models.UUIDField(db_index=True)
     roles = models.JSONField()
     row_action = models.CharField(max_length=10, default='ERROR')
@@ -100,7 +100,7 @@ class ForumPost(models.Model):
             if save_method != "CREATE":
                 original_post = ForumPost.objects.get(pk=self.pk)
                 post_backup = ForumPostHistory(post_id=original_post.id, title=original_post.title, content=original_post.content,  tags=original_post.tags, date=original_post.date, thread=original_post.thread.pk,
-                                               user=original_post.user.pk, row_action=original_post.row_action)
+                                               user=str(original_post.user.pk), row_action=original_post.row_action)
                 post_backup.save()
 
             # else: this is a newly created post don't save it to backup table yet
@@ -118,7 +118,7 @@ class ForumPost(models.Model):
             # by a DBA)
             if save_method == 'DELETE':
                 archived_post = ForumPostHistory(post_id=self.pk, title=self.title, content=self.content,  tags=self.tags, date=self.date, thread=self.thread.pk,
-                                                 user=self.user.pk, row_action=self.row_action)
+                                                 user=str(self.user.pk), row_action=self.row_action)
                 archived_post.save()
 
 
@@ -128,7 +128,7 @@ class ForumPostHistory(models.Model):
     title = models.CharField(max_length=50)
     content = models.TextField()
     tags = models.CharField(max_length=150)
-    date = models.DateTimeField(default=timezone.now)
+    date = models.DateTimeField()
     thread = models.UUIDField(db_index=True)
     user = models.UUIDField(db_index=True)
     row_action = models.CharField(max_length=10, default='ERROR')
@@ -163,7 +163,7 @@ class ForumComment(models.Model):
             if save_method != "CREATE":
                 original_comment = ForumComment.objects.get(pk=self.pk)
                 comment_backup = ForumCommentHistory(comment_id=original_comment.id, content=original_comment.content, date=original_comment.date, post=original_comment.post.pk,
-                                                     user=original_comment.user.pk, row_action=original_comment.row_action)
+                                                     user=str(original_comment.user.pk), row_action=original_comment.row_action)
                 comment_backup.save()
 
             # else: this is a newly created comment don't save it to backup table yet
@@ -181,7 +181,7 @@ class ForumComment(models.Model):
             # by a DBA)
             if save_method == 'DELETE':
                 archived_comment = ForumCommentHistory(comment_id=self.id, content=self.content, date=self.date, post=self.post.pk,
-                                                       user=self.user.pk, row_action=self.row_action)
+                                                       user=str(self.user.pk), row_action=self.row_action)
                 archived_comment.save()
 
 
@@ -189,7 +189,7 @@ class ForumCommentHistory(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     comment_id = models.UUIDField(db_index=True)
     content = models.TextField()
-    date = models.DateTimeField(default=timezone.now)
+    date = models.DateTimeField()
     post = models.UUIDField(db_index=True)
     user = models.UUIDField(db_index=True)
     row_action = models.CharField(max_length=10, default='ERROR')

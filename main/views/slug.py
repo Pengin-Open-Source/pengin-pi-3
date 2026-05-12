@@ -18,21 +18,24 @@ class SlugView(SuperTemplateView):
         slug_names = [s for s in slug_path.strip("/").split("/") if s]
         current_slug = None
 
-        for name in slug_names:
+        if not slug_names:  # Handle root URL ("/")
             try:
-                current_slug = Slug.objects.get(
-                    name=name,
-                    parent=current_slug
-                )
+                # Conventionally, the root slug might be named 'home' or have a specific flag.
+                # Here, we'll just try to find a root slug. This might need refinement
+                # if multiple root slugs exist.
+                current_slug = Slug.objects.get(parent=None, name='home') # Or some other default
             except Slug.DoesNotExist:
                 return self.handle_missing_slug(request)
+        else:
+            for name in slug_names:
+                try:
+                    # Use case-sensitive lookup for slug names
+                    current_slug = Slug.objects.get(name=name, parent=current_slug)
+                except (Slug.DoesNotExist, Slug.MultipleObjectsReturned):
+                    return self.handle_missing_slug(request)
 
-        # Handle root ("/") with no slugs defined
-        if not slug_names and not current_slug:
-            try:
-                current_slug = Slug.objects.get(parent=None)
-            except Slug.DoesNotExist:
-                return self.handle_missing_slug(request)
+        if not current_slug:
+            return self.handle_missing_slug(request)
 
         context = {
             "title": current_slug.name,
