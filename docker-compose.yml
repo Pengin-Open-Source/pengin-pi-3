@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:10.11 # Using a specific version is recommended
+    container_name: pengin-pi-db
+    restart: always
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - tobuweb
+
+  web:
+    build: .
+    container_name: pengin-pi-web
+    restart: always
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             python manage.py migrate &&
+             gunicorn main.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - /media/win/workshop/repos/tobuweb:/app
+      - static_volume:/app/staticfiles # Static files are still collected into a separate volume
+      # - media_volume:/app/media # Uncomment if you have a media directory
+    expose:
+      - 8000
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=False
+      - ALLOWED_HOSTS=${DOMAIN}
+      - DB_ENGINE=django.db.backends.mysql
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD} # Make sure this is defined in your .env file
+      - DB_HOST=db
+      - DB_PORT=3306
+      # Add other environment variables from your settings.py here
+      - SES_HOST=${SES_HOST}
+      - SES_USERNAME_SMTP=${SES_USERNAME_SMTP}
+      - SES_PASSWORD_SMTP=${SES_PASSWORD_SMTP}
+      - SES_SENDER_NAME=${SES_SENDER_NAME}
+      - SES_SENDER=${SES_SENDER}
+      - REDIS_URL=redis://redis:6379 # Point to the redis service
+    depends_on:
+      - db
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pengin-pi.rule=Host(`tobupengin.com`) || Host(`www.tobupengin.com`)"
+      - "traefik.http.routers.pengin-pi.entrypoints=websecure"
+      - "traefik.http.routers.pengin-pi.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pengin-pi.loadbalancer.server.port=8000"
+      - "traefik.docker.network=root_proxy"
+    networks:
+      - tobuweb
+      - root_proxy
+
+  redis:
+    image: redis:6-alpine
+    container_name: pengin-pi-redis
+    restart: always
+    networks:
+      - tobuweb
+
+volumes:
+  mariadb_data:
+  static_volume:
+
+networks:
+  tobuweb:
+  proxy:
+    external: true
+    name: root_proxy

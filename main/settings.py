@@ -22,10 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-14nmqptb91000ao@b&c-a1*%=8b)!f-g2=^gsxcbo+d7!h&onj'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-14nmqptb91000ao@b&c-a1*%=8b)!f-g2=^gsxcbo+d7!h&onj')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
 #LOGIN REDIRECT
 LOGIN_URL = '/login/'
@@ -33,7 +33,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 #ALLOWED HOSTS
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
 
 # Application definition
 
@@ -102,17 +102,23 @@ WSGI_APPLICATION = 'main.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# Default to SQLite for local development
+# Docker environment variables will override this for production
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
+        'NAME': config('DB_NAME', default=BASE_DIR / 'db.sqlite3'),
+        'USER': config('DB_USER', default=None),
+        'PASSWORD': config('DB_PASSWORD', default=None),
+        'HOST': config('DB_HOST', default=None),
+        'PORT': config('DB_PORT', default=None),
+    }
 }
 
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379",
+        "LOCATION": config('REDIS_URL', default="redis://127.0.0.1:6379"),
     }
 }
 # Password validation

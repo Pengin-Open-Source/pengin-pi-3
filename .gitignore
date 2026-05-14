@@ -1,4 +1,5 @@
 # do not push .env, api keys, or .sqlite files to GitHub
+*.sqlite3
 *.sqlite
 *__pycache__
 *.py[cod]
