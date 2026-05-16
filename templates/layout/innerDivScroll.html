@@ -1,4 +1,6 @@
 {% extends "layout.html" %}
+{% load static %}
+
 
 {% block content %}
     <div class="main-container">
@@ -16,7 +18,7 @@
               </div> 
               <div class="page-hamburger"> 
                   <div class="dropdown">
-                    <div class="dropdown-btn"><img class="icon" src="{{ url_for ('static', filename = 'icons/menu-icon.svg')}}" alt="Hamburger Icon"></div>
+                    <div class="dropdown-btn"><img class="icon" src="{% static 'icons/menu-icon.svg' %}" alt="Hamburger Icon"></div>
                     <div class="dropdown-content">
                       {% block pageDropDowns %}{% endblock %}
                     </div>

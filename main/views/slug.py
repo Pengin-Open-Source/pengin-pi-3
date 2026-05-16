@@ -1,6 +1,6 @@
 import json
 from django.http import HttpResponse
-from django.template import Template, Context
+from django.template import Template, Context, RequestContext
 from django.template.loader import get_template
 from django.shortcuts import get_object_or_404
 from .base import SuperTemplateView
@@ -46,21 +46,41 @@ class SlugView(SuperTemplateView):
             "is_admin": request.user.is_staff,
         }
 
-        rendered = ""
+        template_obj = None
+        is_from_string = False
 
-        if current_slug.template_name:
-            static_template = get_template(current_slug.template_name)
-            rendered = static_template.render(context, request)
-
+        # If render_template is provided, it's the primary source.
+        # It can optionally extend a template from template_name.
         if current_slug.render_template:
+            template_string = current_slug.render_template
             try:
-                blocks = json.loads(current_slug.render_template)
+                # If render_template contains JSON, it's for block content.
+                # We'll inject it into the template specified by template_name.
+                blocks = json.loads(template_string)
                 context.update(blocks)
+                if not current_slug.template_name:
+                    # Default to a simple template if none is specified
+                    template_obj = Template("{{ main|safe }}")
+                    is_from_string = True
+                else:
+                    template_obj = get_template(current_slug.template_name)
             except json.JSONDecodeError:
-                context["main"] = current_slug.render_template
+                # The render_template is a full Django template string.
+                template_obj = Template(template_string)
+                is_from_string = True
+        elif current_slug.template_name:
+            # Only a static template is provided.
+            template_obj = get_template(current_slug.template_name)
+        else:
+            # No template information, return empty response or an error.
+            return HttpResponse("")
 
-            dynamic_template = Template(rendered or "{{ main|safe }}")
-            rendered = dynamic_template.render(Context(context))
+        if is_from_string:
+            # For templates from strings, use RequestContext to make it request-aware.
+            rendered = template_obj.render(RequestContext(request, context))
+        else:
+            # For templates from get_template(), the render method accepts the request directly.
+            rendered = template_obj.render(context, request)
 
         return HttpResponse(rendered)
 
