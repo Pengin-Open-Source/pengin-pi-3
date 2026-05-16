@@ -1,19 +1,23 @@
 version: '3.8'
 
 services:
-  db:
-    image: mariadb:10.11 # Using a specific version is recommended
+  postgres:
+    image: postgres:15-alpine
     container_name: pengin-pi-db
     restart: always
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     networks:
       - tobuweb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     build: .
@@ -24,31 +28,35 @@ services:
              python manage.py migrate &&
              gunicorn main.wsgi:application --bind 0.0.0.0:8000"
     volumes:
-      - /media/win/workshop/repos/tobuweb:/app
+      - .:/app # Using relative path for better portability
       - static_volume:/app/staticfiles # Static files are still collected into a separate volume
       # - media_volume:/app/media # Uncomment if you have a media directory
     expose:
       - 8000
     environment:
       - SECRET_KEY=${SECRET_KEY}
-      - DEBUG=False
+      - DEBUG=${DEBUG:-False}
       - ALLOWED_HOSTS=${DOMAIN}
-      - DB_ENGINE=django.db.backends.mysql
+      - DB_ENGINE=django.db.backends.postgresql
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD} # Make sure this is defined in your .env file
-      - DB_HOST=db
-      - DB_PORT=3306
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
       # Add other environment variables from your settings.py here
       - SES_HOST=${SES_HOST}
       - SES_USERNAME_SMTP=${SES_USERNAME_SMTP}
       - SES_PASSWORD_SMTP=${SES_PASSWORD_SMTP}
       - SES_SENDER_NAME=${SES_SENDER_NAME}
       - SES_SENDER=${SES_SENDER}
-      - REDIS_URL=redis://redis:6379 # Point to the redis service
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=mongodb://${DB_USER}:${DB_PASSWORD}@ferretdb:27017/
+      - MONGODB_DB_NAME=${DB_NAME}
     depends_on:
-      - db
+      postgres:
+        condition: service_healthy
       - redis
+      - ferretdb
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pengin-pi.rule=Host(`tobupengin.com`) || Host(`www.tobupengin.com`)"
@@ -60,6 +68,19 @@ services:
       - tobuweb
       - root_proxy
 
+  ferretdb:
+    image: ghcr.io/ferretdb/ferretdb:latest
+    container_name: pengin-pi-ferretdb
+    restart: always
+    environment:
+      - FERRETDB_POSTGRESQL_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+    ports:
+      - "27017:27017"
+    depends_on:
+      - postgres
+    networks:
+      - tobuweb
+
   redis:
     image: redis:6-alpine
     container_name: pengin-pi-redis
@@ -68,7 +89,7 @@ services:
       - tobuweb
 
 volumes:
-  mariadb_data:
+  postgres_data:
   static_volume:
 
 networks:

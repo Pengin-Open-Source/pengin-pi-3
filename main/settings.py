@@ -114,6 +114,8 @@ DATABASES = {
         'PORT': config('DB_PORT', default=None),
     }
 }
+MONGODB_URI = config('MONGODB_URI', default="mongodb://ferretdb:27017/")
+MONGODB_DB_NAME = config('MONGODB_DB_NAME', default="dynamic_cms")
 
 CACHES = {
     "default": {

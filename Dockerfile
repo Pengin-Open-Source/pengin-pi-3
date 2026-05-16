@@ -8,8 +8,7 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /app
 
 # Install build dependencies for mysqlclient and other packages
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential default-libmysqlclient-dev gcc pkg-config && \
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev gcc pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -22,8 +21,7 @@ FROM python:3.14.4-slim
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends default-libmysqlclient-dev && \
+RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/wheels /wheels

@@ -8,3 +8,5 @@ django-html-macros
 gunicorn
 mysqlclient
 redis
+pymongo
+mariadb
