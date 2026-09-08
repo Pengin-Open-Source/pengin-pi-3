@@ -1,0 +1,29 @@
+{# templates/components/comment-form.html #}
+{# Distilled from tobuwebprod's templates/macros/forum_tickets/                #}
+{# comment_form.html (a "reply to this thing" POST form used by both        #}
+{# tickets and forums) - pairs with components/comment-thread.html above.    #}
+{# #}
+{# Usage: {% include "components/comment-form.html" %}. Context vars, all    #}
+{# optional (falls back to a plain example textarea+button if omitted):      #}
+{# `form` (a Django Form/ModelForm - its fields are looped and rendered),    #}
+{# `action_url`, `subject_label` (e.g. "this ticket" / "this post"). #}
+
+<form method="POST" action="{{ action_url|default:'.' }}">
+    {% csrf_token %}
+    <label class="form-label fw-semibold text-dark">Share your thoughts on <em>{{ subject_label|default:"this" }}</em></label>
+    {% if form %}
+        {% for field in form %}
+            <div class="mb-3">
+                {{ field }}
+                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors }}</div>{% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="mb-3">
+            <textarea class="form-control" name="content" rows="3" placeholder="Write a comment..."></textarea>
+        </div>
+    {% endif %}
+    <button class="btn btn-primary fw-semibold" type="submit">
+        <i class="fas fa-paper-plane me-1"></i> Submit Comment
+    </button>
+</form>

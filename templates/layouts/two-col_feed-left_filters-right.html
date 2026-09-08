@@ -1,0 +1,46 @@
+{# templates/layouts/two-col_feed-left_filters-right.html #}
+{# The tobuwebprod "dashboard" shape used by tickets.html/my_tickets.html    #}
+{# and blogs.html: a scrollable, paginated card feed on the left, a stack    #}
+{# of filter/search/admin-action cards on the right. Demonstrates            #}
+{# widgets/status-control-panel.html nested inside right_col - a real        #}
+{# example of the "layouts nest widgets" pattern, not just a description.    #}
+{% extends "layout.html" %}
+{% load static %}
+{% block page_title %}{% endblock %}
+{% block jsonld %}{% endblock %}
+{% block captchaScript %}{% endblock %}
+
+{% block pageContent %}
+<section class="page-section bg-light text-dark mb-0 py-5">
+<div class="container px-4 px-lg-5 pt-5 mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        {% block top_left %}<h1 class="h3 fw-bold text-secondary mb-0">{{ primary_title|default:"Example Feed" }}</h1>{% endblock %}
+        {% block top_right %}{% endblock %}
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8 col-md-12">
+            {% block left_col %}
+                <div class="d-flex flex-column gap-3">
+                    <article class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h2 class="h5 fw-bold text-secondary mb-2">Example Feed Item</h2>
+                            <p class="text-muted small mb-0">Replace this block with a real paginated list of cards.</p>
+                        </div>
+                    </article>
+                </div>
+                {% include "macros/pagination.html" %}
+            {% endblock %}
+        </div>
+
+        <div class="col-lg-4 col-md-12">
+            {% block right_col %}
+                {% include "widgets/status-control-panel.html" %}
+            {% endblock %}
+        </div>
+    </div>
+
+</div>
+</section>
+{% endblock %}

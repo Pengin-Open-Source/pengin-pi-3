@@ -1,0 +1,66 @@
+{# templates/components/comment-thread.html #}
+{% load static %}
+{# Distilled from tobuwebprod's templates/macros/forum_tickets/                #}
+{# comments_render.html (already shared between tickets and forums, but      #}
+{# with tickets-vs-forums branching baked in) plus blogs/blogpost.html's      #}
+{# separate hand-rolled duplicate comment form. This version drops the       #}
+{# per-app branching in favor of one `can_manage` flag the caller computes    #}
+{# (e.g. `comment.author == request.user or is_staff`), and uses the shared  #}
+{# js/datetime-conversion.js instead of redefining the same conversion       #}
+{# function inline on every page that renders a thread. #}
+{# #}
+{# Usage: {% include "components/comment-thread.html" %} (typically inside a #}
+{# layout's bottom_box block). Context vars, all optional (falls back to a   #}
+{# tiny example thread if omitted): `comments` (a Page object or list of     #}
+{# {author_name, date, content, can_manage, edit_url, delete_url}),          #}
+{# `pagination_page` (a Paginator Page, for {% include "macros/pagination.   #}
+{# html" %}). #}
+
+<div class="d-flex flex-column gap-3">
+    {% if comments %}
+        {% for comment in comments %}
+            <div class="border-bottom pb-3 mb-3">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                    <div class="small text-muted">
+                        <i class="fas fa-user me-1"></i>
+                        <strong class="text-dark">{{ comment.author_name }}</strong> on
+                        <span class="comment-timestamp" data-utc="{{ comment.date|date:'c' }}">{{ comment.date }}</span>
+                    </div>
+                    {% if comment.can_manage %}
+                        <div class="d-flex gap-2">
+                            {% if comment.edit_url %}
+                                <a class="btn btn-outline-secondary btn-sm" href="{{ comment.edit_url }}"><i class="fas fa-edit"></i></a>
+                            {% endif %}
+                            {% if comment.delete_url %}
+                                <form method="post" action="{{ comment.delete_url }}">
+                                    {% csrf_token %}
+                                    <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Delete this comment?')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                <p class="mb-0 text-secondary" style="white-space: pre-line;">{{ comment.content }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="border-bottom pb-3 mb-3">
+            <div class="small text-muted mb-2"><i class="fas fa-user me-1"></i> <strong class="text-dark">Example User</strong> on <span class="comment-timestamp">just now</span></div>
+            <p class="mb-0 text-secondary">This is an example comment - pass a real `comments` list to replace it.</p>
+        </div>
+        <p class="text-muted mb-0">No comments yet.</p>
+    {% endif %}
+</div>
+
+{% if pagination_page %}{% include "macros/pagination.html" %}{% endif %}
+
+<script src="{% static 'js/datetime-conversion.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.comment-timestamp[data-utc]').forEach(function (el) {
+        el.textContent = convertUTCToLocal(el.dataset.utc);
+    });
+});
+</script>

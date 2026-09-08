@@ -1,0 +1,58 @@
+{# templates/components/decision-panel.html #}
+{# Distilled from tobuwebprod's tickets/templates/workflows/                  #}
+{# account_access_workflow.html and 3 near-identical sibling partials         #}
+{# (company_request_workflow.html, company_edit_workflow.html,                #}
+{# company_removal_workflow.html) - all four were "show a submitted           #}
+{# payload's fields, then either an approve/deny action form (undecided) or   #}
+{# a decision banner (already decided)", differing only in field names and    #}
+{# the action URL. This is the one generic version. #}
+{# #}
+{# Usage: {% include "components/decision-panel.html" %}. Context vars, all  #}
+{# optional (falls back to example content if omitted): `panel_title`,       #}
+{# `payload_fields` (list of {label, value}), `decision` (None/"approved"/   #}
+{# "denied"), `decided_by`, `decided_at`, `can_decide` (bool), `action_url`, #}
+{# `pending_message` (shown instead of the form when `can_decide` is False). #}
+
+<h3 class="h6 fw-bold text-secondary mb-3">
+    <i class="fas fa-file-signature text-primary me-2"></i> {{ panel_title|default:"Request" }}
+</h3>
+
+<div class="row g-3 mb-3">
+    {% if payload_fields %}
+        {% for field in payload_fields %}
+            <div class="col-md-6">
+                <span class="text-muted d-block fs-7">{{ field.label }}</span>
+                <span class="fw-semibold">{{ field.value }}</span>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-md-6">
+            <span class="text-muted d-block fs-7">Example Field</span>
+            <span class="fw-semibold">Example value</span>
+        </div>
+    {% endif %}
+</div>
+
+{% if decision %}
+    {% if decision == 'approved' %}
+        <div class="alert alert-success mb-0">
+            <i class="fas fa-check-circle me-1"></i> <strong>APPROVED</strong> by {{ decided_by }} on {{ decided_at }}
+        </div>
+    {% else %}
+        <div class="alert alert-danger mb-0">
+            <i class="fas fa-times-circle me-1"></i> <strong>DENIED</strong> by {{ decided_by }} on {{ decided_at }}
+        </div>
+    {% endif %}
+{% elif can_decide %}
+    <form method="POST" action="{{ action_url|default:'.' }}" class="d-flex gap-2">
+        {% csrf_token %}
+        <button class="btn btn-primary btn-sm fw-semibold" type="submit" name="action" value="approve">
+            <i class="fas fa-check me-1"></i> Approve
+        </button>
+        <button class="btn btn-outline-danger btn-sm fw-semibold" type="submit" name="action" value="deny">
+            <i class="fas fa-times me-1"></i> Deny
+        </button>
+    </form>
+{% else %}
+    <p class="text-muted fst-italic mb-0">{{ pending_message|default:"Awaiting review." }}</p>
+{% endif %}

@@ -1,0 +1,14 @@
+{# templates/js/json-ld.html #}
+{# Generic JSON-LD structured-data <script> block. tobuwebprod hand-rolled #}
+{# its own inline <script type="application/ld+json"> in home/about/products #}
+{# instead of sharing one pattern - this is that one pattern. #}
+{# #}
+{# Usage - {% include %} inside a page's {% block jsonld %}, passing a #}
+{# `jsonld` dict already built server-side (Django's json_script filter, or #}
+{# a view-provided context var), e.g.: #}
+{#   {% block jsonld %}{% include "js/json-ld.html" with jsonld=organization_schema %}{% endblock %} #}
+{% if jsonld %}
+<script type="application/ld+json">
+{{ jsonld|safe }}
+</script>
+{% endif %}

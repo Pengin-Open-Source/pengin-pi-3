@@ -1,0 +1,47 @@
+{# templates/widgets/slot-picker.html #}
+{# Distilled from tobuwebprod's events/calendar/reserve_slot.html - a grid   #}
+{# of clickable time-slot buttons, each either a mini POST form (available)  #}
+{# or disabled (already reserved/unavailable). #}
+{# #}
+{# Usage: {% include "widgets/slot-picker.html" %}. Context vars, all        #}
+{# optional (falls back to a small hardcoded example grid if omitted):       #}
+{# `slots` (list of {label, value, available: bool}), `form_action`. #}
+
+<div class="row g-2">
+    {% if slots %}
+        {% for slot in slots %}
+            <div class="col-6 col-md-3">
+                {% if slot.available %}
+                    <form method="post" action="{{ form_action|default:'.' }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="slot" value="{{ slot.value }}">
+                        <button type="submit" class="btn btn-outline-primary w-100">{{ slot.label }}</button>
+                    </form>
+                {% else %}
+                    <button type="button" class="btn btn-outline-secondary w-100" disabled>{{ slot.label }}</button>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-6 col-md-3">
+            <form method="post" action=".">
+                {% csrf_token %}
+                <input type="hidden" name="slot" value="9am">
+                <button type="submit" class="btn btn-outline-primary w-100">9:00 AM</button>
+            </form>
+        </div>
+        <div class="col-6 col-md-3">
+            <button type="button" class="btn btn-outline-secondary w-100" disabled>10:00 AM</button>
+        </div>
+        <div class="col-6 col-md-3">
+            <form method="post" action=".">
+                {% csrf_token %}
+                <input type="hidden" name="slot" value="11am">
+                <button type="submit" class="btn btn-outline-primary w-100">11:00 AM</button>
+            </form>
+        </div>
+        <div class="col-6 col-md-3">
+            <button type="button" class="btn btn-outline-secondary w-100" disabled>1:00 PM</button>
+        </div>
+    {% endif %}
+</div>

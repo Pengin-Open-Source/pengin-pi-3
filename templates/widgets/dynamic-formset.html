@@ -1,0 +1,110 @@
+{# templates/widgets/dynamic-formset.html #}
+{# Distilled from tobuwebprod's tools/_team_role_formset.html and             #}
+{# about/_about_employee_script.html - two independent, near-duplicate        #}
+{# implementations of the same "add/remove a row of a Django formset,        #}
+{# client-side, then reindex the remaining rows' field names" pattern. This   #}
+{# is the one generic version. #}
+{# #}
+{# Usage: {% include "widgets/dynamic-formset.html" with formset=my_formset  #}
+{# prefix="my_formset_prefix" row_template_id="empty-row-template" %} - the   #}
+{# caller is responsible for the actual per-row field markup (it varies too   #}
+{# much to genericize); this widget provides the management-form wiring,     #}
+{# the add/remove/reindex JS, and the empty-row <template> mechanism. #}
+
+{% if formset %}{{ formset.management_form }}{% endif %}
+
+<div id="dynamicFormsetContainer" class="d-flex flex-column gap-3">
+    {% if formset %}
+        {% for form in formset %}
+            <div class="formset-row p-3 bg-light border rounded position-relative">
+                {{ form.id }}
+                <div class="d-none">{{ form.DELETE }}</div>
+                <div class="row g-3 align-items-center">
+                    {% for field in form.visible_fields %}
+                        <div class="col-md">
+                            <label class="small fw-bold mb-1">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <div class="col-md-auto text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-formset-row">
+                            <i class="fas fa-trash me-1"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="formset-row p-3 bg-light border rounded position-relative">
+            <div class="row g-3 align-items-center">
+                <div class="col-md">
+                    <label class="small fw-bold mb-1">Example Field</label>
+                    <input type="text" class="form-control" placeholder="Example row">
+                </div>
+                <div class="col-md-auto text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-formset-row">
+                        <i class="fas fa-trash me-1"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<button type="button" id="addFormsetRowBtn" class="btn btn-outline-success btn-sm mt-2">
+    <i class="fas fa-plus me-1"></i> Add Row
+</button>
+
+{# The caller supplies the actual empty-row markup (with __prefix__ placeholders) #}
+{# via a <template id="{{ row_template_id|default:'empty-row-template' }}"> - #}
+{# see tools/_team_role_formset.html in tobuwebprod for a worked example. #}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var prefix = '{{ prefix|default:"form" }}';
+    var container = document.getElementById('dynamicFormsetContainer');
+    var addBtn = document.getElementById('addFormsetRowBtn');
+    var template = document.getElementById('{{ row_template_id|default:"empty-row-template" }}');
+    var totalForms = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+
+    function reindex() {
+        var rows = container.querySelectorAll('.formset-row');
+        var regex = new RegExp(prefix + '-\\d+-', 'g');
+        rows.forEach(function (row, index) {
+            var replacement = prefix + '-' + index + '-';
+            row.querySelectorAll('input, select, label').forEach(function (el) {
+                if (el.name) el.name = el.name.replace(regex, replacement);
+                if (el.id) el.id = el.id.replace(regex, replacement);
+                if (el.htmlFor) el.htmlFor = el.htmlFor.replace(regex, replacement);
+            });
+        });
+        if (totalForms) totalForms.value = rows.length;
+    }
+
+    if (addBtn && template && totalForms) {
+        addBtn.addEventListener('click', function () {
+            var count = parseInt(totalForms.value, 10);
+            var html = template.innerHTML.replace(/__prefix__/g, count);
+            var wrapper = document.createElement('div');
+            wrapper.innerHTML = html;
+            container.appendChild(wrapper.firstElementChild);
+            reindex();
+        });
+    }
+
+    container.addEventListener('click', function (e) {
+        var removeBtn = e.target.closest('.remove-formset-row');
+        if (!removeBtn) return;
+        var row = removeBtn.closest('.formset-row');
+        var deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
+        var idInput = row.querySelector('input[name$="-id"]');
+        if (deleteCheckbox && idInput && idInput.value) {
+            deleteCheckbox.checked = true;
+            row.style.setProperty('display', 'none', 'important');
+        } else {
+            row.remove();
+            reindex();
+        }
+    });
+});
+</script>

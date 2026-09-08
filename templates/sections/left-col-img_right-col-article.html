@@ -1,0 +1,33 @@
+{# templates/sections/left-col-img_right-col-article.html #}
+{# Distilled from tobuwebprod's home.html/about.html/product.html - each     #}
+{# independently hand-rolled the same "image on one side, article text on    #}
+{# the other" two-column split. This is the one generic version, with a      #}
+{# `flip` flag to mirror which side the image is on. #}
+{# #}
+{# Usage: {% include "sections/left-col-img_right-col-article.html" %}.      #}
+{# Context vars, all optional (falls back to example content if omitted):    #}
+{# `image_url`, `image_alt`, `title`, `article_html` (pre-rendered/markdown  #}
+{# HTML - trusted, mark_safe upstream), `flip` (bool - image on the right    #}
+{# instead of the left). #}
+
+<section class="page-section bg-light text-dark mb-0 py-5">
+<div class="container px-4 px-lg-5">
+    <div class="row gx-0 align-items-center {% if flip %}flex-row-reverse{% endif %}">
+        <div class="col-lg-6">
+            <img class="img-fluid rounded shadow-sm" src="{{ image_url|default:'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80' }}" alt="{{ image_alt|default:'Section image' }}">
+        </div>
+        <div class="col-lg-6">
+            <div class="p-4 p-lg-5">
+                <h2 class="fw-bold text-secondary mb-3">{{ title|default:"Section Title" }}</h2>
+                <div class="text-muted">
+                    {% if article_html %}
+                        {{ article_html|safe }}
+                    {% else %}
+                        <p>Replace this with your own article content. This section pairs an image with text and mirrors sides with the <code>flip</code> context variable.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>

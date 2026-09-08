@@ -1,0 +1,37 @@
+{# templates/sections/feature-grid.html #}
+{# Distilled from tobuwebprod's home.html/about.html/products.html/          #}
+{# neighborhood.html - each independently hand-rolled the same N-column      #}
+{# icon/image + title + text card grid. This is the one generic version,    #}
+{# built on the existing components/tile.html card component. #}
+{# #}
+{# Usage: {% include "sections/feature-grid.html" %}. Context vars, all      #}
+{# optional (falls back to a 3-item example grid if omitted): `heading`,     #}
+{# `items` (list of {icon_url, title, text}), `columns` (2/3/4 - Bootstrap   #}
+{# column count, defaults to 3). #}
+
+<section class="page-section bg-white text-dark mb-0 py-5">
+<div class="container px-4 px-lg-5">
+    {% if heading %}
+        <h2 class="text-center fw-bold text-secondary mb-5">{{ heading }}</h2>
+    {% endif %}
+    <div class="row gy-4">
+        {% if items %}
+            {% for item in items %}
+                <div class="col-md-{{ columns|default:4 }}">
+                    {% include "components/tile.html" with image=item.icon_url title=item.title content=item.text %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-md-4">
+                {% include "components/tile.html" with title="Example Feature One" content="Describe the first feature here." %}
+            </div>
+            <div class="col-md-4">
+                {% include "components/tile.html" with title="Example Feature Two" content="Describe the second feature here." %}
+            </div>
+            <div class="col-md-4">
+                {% include "components/tile.html" with title="Example Feature Three" content="Describe the third feature here." %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+</section>

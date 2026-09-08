@@ -1,0 +1,40 @@
+{# templates/layouts/table-list.html #}
+{# The tobuwebprod "staff admin table" shape used by tools/user_list.html    #}
+{# and tools/company_list.html: header + search on top, a sort-toggle table  #}
+{# below. Demonstrates widgets/sort-toggle-table.html nested inside          #}
+{# middle_article. #}
+{% extends "layout.html" %}
+{% load static %}
+{% block page_title %}{% endblock %}
+{% block jsonld %}{% endblock %}
+{% block captchaScript %}{% endblock %}
+
+{% block pageContent %}
+<section class="page-section bg-light text-dark mb-0 py-5">
+<div class="container-fluid px-4 px-lg-5 pt-5 mt-4">
+    <div class="row justify-content-center my-4">
+        <div class="col-12 bg-white p-4 p-md-5 border rounded shadow-sm">
+
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 border-bottom pb-3 gap-3">
+                {% block top_left %}<h1 class="h3 fw-bold text-secondary m-0">{{ primary_title|default:"Example Table" }}</h1>{% endblock %}
+                {% block top_right %}{% endblock %}
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block middle_article %}
+                {% include "widgets/sort-toggle-table.html" %}
+            {% endblock %}
+
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}

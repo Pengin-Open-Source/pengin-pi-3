@@ -1,0 +1,76 @@
+{# templates/widgets/sort-toggle-table.html #}
+{# Distilled from tobuwebprod's tools/user_list.html + tools/company_list.html - #}
+{# two near-identical staff admin tables (sortable column headers with an     #}
+{# arrow-icon toggle, striped rows, a search box, pagination footer). This    #}
+{# is the one generic version. #}
+{# #}
+{# Usage: {% include "widgets/sort-toggle-table.html" %} inside a layout's    #}
+{# middle_article block (see layouts/table-list.html). Context vars, all      #}
+{# optional (falls back to a small hardcoded example table if omitted):       #}
+{# `columns` (list of {key, label, sortable: bool}), `rows` (list of {cells:  #}
+{# [...values, already in the same order as `columns`]} - kept as a plain     #}
+{# ordered list rather than a dict-keyed-by-column-name, since Django         #}
+{# templates can't do a dynamic dict[key] lookup without a custom filter),    #}
+{# `current_sort` (the active sort key, possibly "-"-prefixed for             #}
+{# descending), `query` (current search string). #}
+
+<form method="get" class="d-flex align-items-center gap-2 mb-3" style="max-width: 400px;">
+    <div class="input-group">
+        <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+        <input type="text" name="q" value="{{ query }}" class="form-control border-start-0 ps-0" placeholder="Search...">
+        <button type="submit" class="btn btn-primary fw-bold">Search</button>
+    </div>
+</form>
+
+<div class="table-responsive rounded border mb-3">
+    <table class="table table-hover align-middle mb-0 text-start">
+        <thead class="table-dark text-uppercase small">
+            <tr>
+                {% if columns %}
+                    {% for col in columns %}
+                        <th scope="col" class="py-3 px-3">
+                            {% if col.sortable %}
+                                <a href="?sort={% if current_sort == col.key %}-{{ col.key }}{% else %}{{ col.key }}{% endif %}" class="text-white text-decoration-none">
+                                    {{ col.label }}
+                                    {% if current_sort == col.key %}<i class="fas fa-sort-up ms-1"></i>{% elif current_sort == '-'|add:col.key %}<i class="fas fa-sort-down ms-1"></i>{% else %}<i class="fas fa-sort text-white-50 ms-1"></i>{% endif %}
+                                </a>
+                            {% else %}
+                                {{ col.label }}
+                            {% endif %}
+                        </th>
+                    {% endfor %}
+                {% else %}
+                    <th scope="col" class="py-3 px-3">
+                        <a href="?sort=name" class="text-white text-decoration-none">Name <i class="fas fa-sort text-white-50 ms-1"></i></a>
+                    </th>
+                    <th scope="col" class="py-3 px-3">Email</th>
+                    <th scope="col" class="py-3 px-3 text-end">Action</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% if rows %}
+                {% for row in rows %}
+                    <tr class="{% cycle 'bg-white' 'bg-light' %}">
+                        {% for cell in row.cells %}
+                            <td class="py-3 px-3">{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr class="bg-white">
+                    <td class="py-3 px-3 fw-bold text-secondary">Example Row One</td>
+                    <td class="py-3 px-3 text-muted">example-one@example.com</td>
+                    <td class="py-3 px-3 text-end"><a href="#" class="btn btn-outline-primary btn-sm">Edit</a></td>
+                </tr>
+                <tr class="bg-light">
+                    <td class="py-3 px-3 fw-bold text-secondary">Example Row Two</td>
+                    <td class="py-3 px-3 text-muted">example-two@example.com</td>
+                    <td class="py-3 px-3 text-end"><a href="#" class="btn btn-outline-primary btn-sm">Edit</a></td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% include "macros/pagination.html" %}

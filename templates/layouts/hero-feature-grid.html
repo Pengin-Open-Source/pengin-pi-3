@@ -1,0 +1,27 @@
+{# templates/layouts/hero-feature-grid.html #}
+{# The tobuwebprod "marketing/content page" shape used by home.html,        #}
+{# about.html, products.html, and neighborhood.html: a hero/intro zone      #}
+{# followed by a feature-card grid section. Demonstrates                    #}
+{# sections/feature-grid.html and sections/left-col-img_right-col-          #}
+{# article.html nested inside middle_article. #}
+{% extends "layout.html" %}
+{% load static %}
+{% block page_title %}{% endblock %}
+{% block jsonld %}{% endblock %}
+{% block captchaScript %}{% endblock %}
+
+{% block pageContent %}
+{% block top_center %}
+    <section class="page-section bg-white text-dark mb-0 py-5">
+    <div class="container px-4 px-lg-5 text-center">
+        <h1 class="fw-bold text-secondary mb-3">{{ primary_title|default:"Example Hero Heading" }}</h1>
+        <p class="text-muted lead">Replace this block with a real hero/intro section.</p>
+    </div>
+    </section>
+{% endblock %}
+
+{% block middle_article %}
+    {% include "sections/left-col-img_right-col-article.html" %}
+    {% include "sections/feature-grid.html" %}
+{% endblock %}
+{% endblock %}
