@@ -14,12 +14,10 @@ from .slug import (
     SlugEditView, 
     SlugDeleteView
 )
-from .base import (
-    SuperTemplateView, 
-    RedisLoggingMixin
-)
+from .base import SuperTemplateView
 from .profile import ProfileView
 from .seo import robots_txt
+from util.mixins import RedisLoggingMixin
 
 
 __all__ = [
