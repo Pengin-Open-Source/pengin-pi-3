@@ -2,6 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from .models import User, UserHistory, Address, AddressHistory, Slug, SlugHistory, RobotsRule
+from main.auth import admin as auth_admin  # noqa: F401 - registers TeamRole/TeamUserRole admin
 
 
 class UserHistoryInline(admin.TabularInline):

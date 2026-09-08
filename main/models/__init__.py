@@ -4,6 +4,11 @@ from .slug import Slug, SlugHistory
 from .mixins import HistoryMixin, AbstractHistory
 from .seo import RobotsRule
 from .sequence_counter import SequenceCounter
+# TeamRole/TeamUserRole are defined in main/auth/models.py (the central RBAC
+# framework - see main/auth/__init__.py), but registered here so Django
+# picks them up as part of the 'main' app and their migrations land in
+# main/migrations/ rather than needing a separate app/migrations dir.
+from main.auth.models import TeamRole, TeamRoleHistory, TeamUserRole, TeamUserRoleHistory
 
 
 __all__ = [
@@ -17,4 +22,8 @@ __all__ = [
     'AbstractHistory',
     'RobotsRule',
     'SequenceCounter',
+    'TeamRole',
+    'TeamRoleHistory',
+    'TeamUserRole',
+    'TeamUserRoleHistory',
 ]

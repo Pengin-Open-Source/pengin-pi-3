@@ -3,7 +3,6 @@
 *.sqlite
 *__pycache__
 *.py[cod]
-auth
 venv
 .githubs
 .github

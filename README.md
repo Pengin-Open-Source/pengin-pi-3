@@ -4,14 +4,14 @@ A Django starter skeleton: the core project scaffolding, dynamic-page (Slug) sys
 
 ## What's included
 
-- **`main`**: the core Django app - the custom `User` model, the `Slug` dynamic-page system (`/slug/create/`, `/slug/edit/<id>/`, and a catch-all page renderer), login/signup/logout, password reset, profile editing, sitemap and robots.txt generation.
-- **`util/`**: shared infrastructure - email sending (SES), S3/local file storage, rate limiting, reCAPTCHA v3, pagination, a small ACL/permissions toolkit, and hardening middleware.
+- **`main`**: the whole project - the custom `User` model, the `Slug` dynamic-page system (`/slug/create/`, `/slug/edit/<id>/`, and a catch-all page renderer), login/signup/logout, password reset, profile editing, sitemap and robots.txt generation, and `main/auth/` - the central RBAC framework (departments/titles, permission checks, view guards, an ACL toolkit).
+- **`util/`**: generic, non-Django infrastructure - email sending (SES), S3/local file storage, rate limiting, reCAPTCHA v3, pagination, and hardening middleware. No auth/permissions/user-framework logic lives here - that's all in `main/auth/`.
 - **`templates/`**: the base page shell (`layout.html`), nav/footer/copyright components, generic Bootstrap macros (pagination, forms, cards, a carousel), and the auth page templates.
 - Docker/nginx/docker-compose deployment shape matching how this project actually runs in production.
 
-## Adding your own apps
+## Adding features
 
-Add each new Django app the normal way (`main/settings.py`'s `INSTALLED_APPS`, wire its URLs into `main/urls.py`). See `PROJECT_STRUCTURE.md` for the project's directory conventions.
+This project deliberately does not use separate Django apps per feature - everything lives inside `main` (organized into submodules, e.g. `main/models/`, `main/views/`), with only generic non-auth infrastructure in `util/`. See `PROJECT_STRUCTURE.md` for the full convention, and `main/auth/` for the RBAC framework every feature's permission checks should go through.
 
 ## Local development
 

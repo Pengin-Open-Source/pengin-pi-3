@@ -1,3 +1,4 @@
+# main/auth/principals.py - a small Flask-Principal-style ACL toolkit.
 from functools import partial
 from collections import namedtuple
 
@@ -45,5 +46,3 @@ are.
 
 class PermissionDenied(RuntimeError):
     """Permission denied to the resource"""
-    
-    

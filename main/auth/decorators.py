@@ -1,7 +1,6 @@
-from functools import wraps
+# main/auth/decorators.py - function-based view auth guards.
 from functools import wraps
 from django.shortcuts import redirect
-from django.urls import reverse
 from django.conf import settings
 from django.http import HttpResponseForbidden
 
@@ -56,7 +55,7 @@ def is_admin_required(view_func):
         # 3️⃣ Admin but not validated → 403
         if not getattr(request.user, "validated", False):
             return HttpResponseForbidden("<h1>Admin account not validated.</h1>")
-        
+
         # 4️⃣ All checks passed, proceed to the view
         if request.user.is_authenticated and request.user.validated and request.user.is_staff:
             return view_func(request, *args, **kwargs)

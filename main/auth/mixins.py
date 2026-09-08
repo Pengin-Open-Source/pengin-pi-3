@@ -1,4 +1,4 @@
-# main/mixins.py - view mixins, distinct from main/models/mixins.py (model mixins)
+# main/auth/mixins.py - class-based view auth guards.
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 
