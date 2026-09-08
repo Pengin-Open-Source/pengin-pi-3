@@ -96,7 +96,19 @@ class SlugView(SuperTemplateView):
                 else:
                     template_obj = get_template(current_slug.template_name)
             except json.JSONDecodeError:
-                # Raw template code in render_template
+                # Raw template code in render_template. If a template_name
+                # was also named (e.g. "layout.html" or a
+                # "layouts/*.html" file), and the author didn't already
+                # write their own {% extends %} tag, treat render_template
+                # as the block content that fills into that named
+                # template's blocks - auto-prepending the extends so
+                # naming a template actually has an effect. An author who
+                # writes {% extends %} themselves (with or without
+                # template_name set) is always left alone.
+                if current_slug.template_name and not template_string.lstrip().startswith('{% extends'):
+                    template_string = (
+                        f'{{% extends "{current_slug.template_name}" %}}\n{template_string}'
+                    )
                 template_obj = Template(template_string)
                 is_from_string = True
         elif current_slug.template_name:
