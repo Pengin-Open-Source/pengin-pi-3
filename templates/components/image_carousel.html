@@ -1,0 +1,77 @@
+{% load static %}
+
+<!-- SECTION 1: Dynamic Hero Carousel Slider Matrix Area -->
+<div id="neighborhoodsCarousel" class="carousel slide carousel-fade bg-dark mt-5 pt-3" data-bs-ride="carousel" style="max-height: 380px; overflow: hidden;">
+    <!-- Indicators -->
+    <div class="carousel-indicators">
+        {% if slides %}
+            {% for slide in slides %}
+                <button type="button" data-bs-target="#neighborhoodsCarousel" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.first %}active{% endif %}" {% if forloop.first %}aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
+            {% endfor %}
+        {% else %}
+            <button type="button" data-bs-target="#neighborhoodsCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#neighborhoodsCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#neighborhoodsCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        {% endif %}
+    </div>
+    
+    <!-- Slides Inner Container -->
+    <div class="carousel-inner">
+        {% if slides %}
+            {% for slide in slides %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}" data-bs-interval="5000">
+                    <img src="{{ slide.display_url|default:'/static/images/neighborhood.png' }}" class="d-block w-100 object-fit-cover opacity-75" style="height: 380px;" alt="{{ slide.alt_text|default:slide.title }}">
+                    <div class="carousel-caption text-start start-0 end-0 px-4 px-lg-5 pb-4 d-flex align-items-end h-100 bg-gradient-to-t">
+                        <div class="container mb-2">
+                            <h2 class="text-uppercase fw-bold text-white tracking-wider mb-1" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.6);">{{ slide.title }}</h2>
+                            {% if slide.description %}
+                                <p class="fs-6 text-white-50 max-w-2xl d-none d-md-block" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">{{ slide.description }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <!-- Default Static Fallback Slides -->
+            <div class="carousel-item active" data-bs-interval="5000">
+                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80" class="d-block w-100 object-fit-cover opacity-75" style="height: 380px;" alt="Placeholder hero image">
+                <div class="carousel-caption text-start start-0 end-0 px-4 px-lg-5 pb-4 d-flex align-items-end h-100 bg-gradient-to-t">
+                    <div class="container mb-2">
+                        <h2 class="text-uppercase fw-bold text-white tracking-wider mb-1" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.6);">Example Slide One</h2>
+                        <p class="fs-6 text-white-50 max-w-2xl d-none d-md-block" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">Replace this carousel's slides with your own content.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carousel-item" data-bs-interval="5000">
+                <img src="https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1600&q=80" class="d-block w-100 object-fit-cover opacity-75" style="height: 380px;" alt="Placeholder image two">
+                <div class="carousel-caption text-start start-0 end-0 px-4 px-lg-5 pb-4 d-flex align-items-end h-100">
+                    <div class="container mb-2">
+                        <h2 class="text-uppercase fw-bold text-white tracking-wider mb-1" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.6);">Example Slide Two</h2>
+                        <p class="fs-6 text-white-50 max-w-2xl d-none d-md-block" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">Another example slide caption.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carousel-item" data-bs-interval="5000">
+                <img src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1600&q=80" class="d-block w-100 object-fit-cover opacity-75" style="height: 380px;" alt="Placeholder image three">
+                <div class="carousel-caption text-start start-0 end-0 px-4 px-lg-5 pb-4 d-flex align-items-end h-100">
+                    <div class="container mb-2">
+                        <h2 class="text-uppercase fw-bold text-white tracking-wider mb-1" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.6);">Example Slide Three</h2>
+                        <p class="fs-6 text-white-50 max-w-2xl d-none d-md-block" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">A third example slide caption.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Controls -->
+    <button class="carousel-control-prev" type="button" data-bs-target="#neighborhoodsCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#neighborhoodsCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>

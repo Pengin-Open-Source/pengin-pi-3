@@ -1,0 +1,65 @@
+{# templates/macros/pagination.html #}
+{% load macros %}
+
+{% macro render_pagination page extra_query="" %}
+{% if page.has_other_pages %}
+<div class="d-flex flex-column align-items-center justify-content-center my-4 gap-2">
+
+    <!-- Item Count Counter Status Badge -->
+    <div class="text-muted small fw-semibold">
+        Showing <span class="text-dark">{{ page.start_index }}</span> – <span class="text-dark">{{ page.end_index }}</span> of <span class="text-dark">{{ page.paginator.count }}</span> entries
+    </div>
+
+    <!-- Bootstrap Horizontal Pagination Bar -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination pagination-sm m-0 shadow-xs border rounded-3 overflow-hidden">
+
+            <!-- Previous Page Control -->
+            {% if page.has_previous %}
+                <li class="page-item">
+                    <a class="page-link text-secondary border-0 px-3" href="?page={{ page.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{{ extra_query }}" aria-label="Previous">
+                        <i class="fas fa-chevron-left me-1 small"></i> Previous
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link text-muted bg-light border-0 px-3 opacity-50">
+                        <i class="fas fa-chevron-left me-1 small"></i> Previous
+                    </span>
+                </li>
+            {% endif %}
+
+            <!-- Dynamic Page Numbers Loop -->
+            {% for num in page.paginator.page_range %}
+                {% if num == page.number %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link text-white fw-bold border-0 px-3" style="background-color: #1A6C9B;">{{ num }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link text-secondary border-0 px-3" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{{ extra_query }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next Page Control -->
+            {% if page.has_next %}
+                <li class="page-item">
+                    <a class="page-link text-secondary border-0 px-3" href="?page={{ page.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{{ extra_query }}" aria-label="Next">
+                        Next <i class="fas fa-chevron-right ms-1 small"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link text-muted bg-light border-0 px-3 opacity-50">
+                        Next <i class="fas fa-chevron-right ms-1 small"></i>
+                    </span>
+                </li>
+            {% endif %}
+
+        </ul>
+    </nav>
+
+</div>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,23 @@
+{# templates/sections/empty_state.html #}
+{# Centered "nothing here" block: optional icon, optional heading, message, optional CTA button. #}
+{# `message` is always auto-escaped (never rendered |safe) even if it contains user input - #}
+{# don't try to smuggle HTML through it. Use plain text only. #}
+{# Usage: {% use_macro render_empty_state message="No results found." icon_class="fas fa-search" %} #}
+{% load macros %}
+
+{% macro render_empty_state message icon_class="" icon_size="fa-2x" title="" title_tag="h4" wrapper_class="col-12 text-center py-5" cta_url="" cta_text="" %}
+<div class="{{ wrapper_class }}">
+    {% if icon_class %}
+        <i class="{{ icon_class }} {{ icon_size }} d-block mb-3 opacity-50"></i>
+    {% endif %}
+    {% if title %}
+        <{{ title_tag }} class="text-secondary fw-bold mb-2">{{ title }}</{{ title_tag }}>
+    {% endif %}
+    <p class="text-muted small mb-0">{{ message }}</p>
+    {% if cta_url %}
+        <div class="mt-3">
+            <a href="{{ cta_url }}" class="btn btn-sm btn-outline-secondary">{{ cta_text|default:"Clear Filters" }}</a>
+        </div>
+    {% endif %}
+</div>
+{% endmacro %}

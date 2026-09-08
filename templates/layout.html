@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <style>
+  body {
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+  }
+</style>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  {% block page_title %}
+  {% endblock %}
+  
+  {% block meta_description %}
+  {% endblock %}
+
+  {% block tags %}
+  {% endblock %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'styles/calendar.css' %}">
+  {% if title %}
+  <title>{{ company_name|default:"Pengin Pi 3"|escape }} - {{ title|escape }}</title>
+  {% else %}
+  <title>{{ company_name|default:"Pengin Pi 3"|escape }}</title>
+  {% endif %}
+  <script>
+    document.cookie = "time_zone=" + Intl.DateTimeFormat().resolvedOptions().timeZone;
+  </script>
+  <!-- Primary SVG Favicon for modern browsers -->
+  <link rel="icon" type="image/svg+xml" href="{% static 'images/logo.svg' %}">
+
+  <!-- Fallback ICO Favicon for older browsers -->
+  <link rel="alternate icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}" sizes="32x32">
+  {% block jsonld %}{% endblock %}
+</head>
+
+{% include "nav_bar.html" %}
+
+<body id="page-top">
+
+  <!-- Main Content Wrapper -->
+  <div class="pt-5 mt-5 mt-lg-5 pt-lg-5">
+    <header class="masthead fixed-nav-offset">
+      {% block pageHeader %}{% endblock %}
+    </header>
+
+    <main class="fixed-nav-offset">
+      {% block pageContent %}{% endblock %}
+    </main>
+  </div>
+
+  <footer class="footer text-center">
+    {% block contact %}{% endblock %}
+    {% include "footer_bar.html" %}
+  </footer>
+  
+  {% include "copyright.html" %}
+
+  <script src="{% static 'js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'javascript/htmx/2.0.4/htmx.min.js' %}"></script>
+  {% block captchaScript %}{% endblock %}
+</body>
+
+</html>

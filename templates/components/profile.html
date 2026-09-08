@@ -1,0 +1,76 @@
+{% extends "layout/no_contact.html" %}
+
+{% block pageContent %}
+<div class="container px-4 px-lg-5 pt-5 mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3 mb-5">
+                <div class="card-header bg-white border-bottom p-4 d-flex align-items-center justify-content-between">
+                    <h1 class="h4 fw-bold text-secondary mb-0">
+                        <i class="fas fa-user-circle text-primary me-2"></i> Your Profile Account
+                    </h1>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{% url 'edit_password' %}" class="btn btn-outline-primary btn-sm rounded-pill fw-semibold">
+                            <i class="fas fa-key me-1"></i> Change Password
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Avatar Section -->
+                        <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                            <div class="me-4 position-relative">
+                                {% if image_url %}
+                                    <img src="{{ image_url }}" alt="{{ user.name }}" class="rounded-circle object-fit-cover border shadow-sm" style="width: 90px; height: 90px;">
+                                {% else %}
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 90px; height: 90px; font-size: 2rem; font-weight: bold;">
+                                        {{ user.name|slice:":1"|default:user.email|slice:":1"|upper }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="id_profile_image" class="form-label fw-bold text-secondary mb-1">Profile Photo</label>
+                                {{ form.profile_image }}
+                                <div class="form-text small">JPG, PNG, or GIF up to 5MB.</div>
+                            </div>
+                        </div>
+
+                        <!-- Form Fields -->
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label fw-semibold text-secondary">Display Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_email" class="form-label fw-semibold text-secondary">Email Address</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                            <a href="/" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary fw-semibold px-4">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+  services:
+    postgres:
+      image: postgres:15-alpine
+      container_name: ${DB_CONTAINER}
+      restart: always
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      environment:
+        - POSTGRES_DB=${DB_NAME}
+        - POSTGRES_USER=${DB_USER}
+        - POSTGRES_PASSWORD=${DB_PASSWORD}
+      networks:
+        - pengin-pi-3
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
+    web:
+      build: .
+      container_name: ${WEB_CONTAINER}
+      restart: always
+      env_file:
+        - .env
+      command: >
+        sh -c "python manage.py collectstatic --noinput &&
+              python manage.py migrate &&
+              uwsgi --http 0.0.0.0:8000 --module main.wsgi:application --master --processes 4 --threads 2"
+      volumes:
+        - ./media:/app/media:z
+        - static_volume:/app/staticfiles
+        - ./nginx_blocklist.conf:/app/nginx_blocklist.conf:ro
+      expose:
+        - "8000"
+      environment:
+        - SECRET_KEY=${SECRET_KEY}
+        - DEBUG=${DEBUG:-False}
+        - ALLOWED_HOSTS=${URL},.${URL},${URL2},localhost,127.0.0.1,web,nginx
+        - DB_ENGINE=django.db.backends.postgresql
+        - DB_NAME=${DB_NAME}
+        - DB_USER=${DB_USER}
+        - DB_PASSWORD=${DB_PASSWORD}
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - SES_HOST=${SES_HOST}
+        - SES_USERNAME_SMTP=${SES_USERNAME_SMTP}
+        - SES_PASSWORD_SMTP=${SES_PASSWORD_SMTP}
+        - SES_SENDER_NAME=${SES_SENDER_NAME}
+        - SES_SENDER=${SES_SENDER}
+        - REDIS_URL=redis://redis:6379
+        - MONGODB_URI=mongodb://${DB_USER}:${DB_PASSWORD}@ferretdb:27017/
+        - MONGODB_DB_NAME=${DB_NAME}
+      depends_on:
+        postgres:
+          condition: service_healthy
+        redis:
+          condition: service_started
+        ferretdb:
+          condition: service_started
+      networks:
+        - pengin-pi-3
+
+    nginx:
+      image: nginx:alpine
+      container_name: ${WEB_CONTAINER}-nginx
+      restart: always
+      volumes:
+        - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+        - ./nginx_blocklist.conf:/etc/nginx/conf.d/blocklist.conf:ro
+        - ./logs/nginx:/var/log/nginx
+        - static_volume:/app/staticfiles:ro
+        - ./media:/app/media:ro
+      depends_on:
+        - web
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.${WEB_CONTAINER}.rule=Host(`${URL}`) || Host(`www.${URL}`) || Host(`${URL2}`)"
+        - "traefik.http.routers.${WEB_CONTAINER}.priority=100"
+        # Bind to BOTH HTTP and HTTPS entrypoints to eliminate 404s on http:// requests:
+        - "traefik.http.routers.${WEB_CONTAINER}.entrypoints=web,websecure"
+        - "traefik.http.routers.${WEB_CONTAINER}.tls=true"
+        - "traefik.http.routers.${WEB_CONTAINER}.tls.certresolver=letsencrypt"
+        # CRITICAL: Tell Traefik to pass traffic over root_proxy, not the internal app network
+        - "traefik.docker.network=root_proxy"
+        - "traefik.http.services.${WEB_CONTAINER}.loadbalancer.server.port=80"
+      networks:
+        - pengin-pi-3
+        - proxy
+
+    ferretdb:
+      image: ghcr.io/ferretdb/ferretdb:latest
+      container_name: ${WEB_CONTAINER}-ferretdb
+      restart: always
+      environment:
+        - FERRETDB_POSTGRESQL_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      depends_on:
+        postgres:
+          condition: service_healthy
+      networks:
+        - pengin-pi-3
+
+    redis:
+      image: redis:6-alpine
+      container_name: ${REDIS_CONTAINER}
+      restart: always
+      volumes:
+        - redis_data:/data
+      networks:
+        - pengin-pi-3
+
+  volumes:
+    postgres_data:
+    static_volume:
+    redis_data:
+
+  networks:
+    pengin-pi-3:
+    proxy:
+      external: true
+      name: root_proxy

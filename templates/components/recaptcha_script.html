@@ -1,0 +1,43 @@
+{# templates/components/recaptcha_script.html #}
+{# Wires a reCAPTCHA v3 token into a form's hidden input on submit. #}
+{# Usage: {% use_macro render_recaptcha_script form_id="contactForm" token_id="g-recaptcha-response-contact" action_name="contact" %} #}
+{# Relies on `site_key` being present in the including page's context. #}
+{% load macros %}
+
+{% macro render_recaptcha_script form_id token_id action_name %}
+{% if site_key %}
+<script src="https://www.google.com/recaptcha/api.js?render={{ site_key }}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const siteKey = "{{ site_key }}";
+    const form = document.getElementById("{{ form_id }}");
+    const tokenInput = document.getElementById("{{ token_id }}");
+
+    if (!form || !tokenInput) return;
+
+    form.addEventListener("submit", function(e) {
+      if (tokenInput.value) {
+        return true;
+      }
+
+      e.preventDefault();
+
+      if (typeof grecaptcha === "undefined") {
+        form.submit();
+        return;
+      }
+
+      grecaptcha.ready(function() {
+        grecaptcha.execute(siteKey, { action: '{{ action_name }}' }).then(function(token) {
+          tokenInput.value = token;
+          form.submit();
+        }).catch(function(err) {
+          console.error("reCAPTCHA Error:", err);
+          form.submit();
+        });
+      });
+    });
+  });
+</script>
+{% endif %}
+{% endmacro %}

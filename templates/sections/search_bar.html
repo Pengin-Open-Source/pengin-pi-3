@@ -1,0 +1,23 @@
+{# templates/sections/search_bar.html #}
+{# A GET search form: icon + text input + optional clear link + optional submit button. #}
+{# Usage: {% use_macro render_search_bar name="q" value=query placeholder="Search..." clear_url=clear_url %} #}
+{# Pass standalone_form="" to render just the input-group (no <form>/button wrapper), #}
+{# for embedding inside a caller-supplied <form> that also carries other hidden filter fields. #}
+{% load macros %}
+
+{% macro render_search_bar action="" name="q" value="" placeholder="Search..." input_size="" clear_url="" button_text="Search" show_button="1" standalone_form="1" %}
+{% if standalone_form %}<form method="get" action="{{ action }}" class="d-flex gap-2">{% endif %}
+    <div class="input-group{% if input_size %} input-group-{{ input_size }}{% endif %}"{% if input_size == "sm" %} style="max-width: 280px;"{% endif %}>
+        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+        <input type="text" name="{{ name }}" class="form-control border-start-0 ps-0" placeholder="{{ placeholder }}" value="{{ value }}">
+        {% if clear_url and value %}
+            <a href="{{ clear_url }}" class="btn btn-outline-secondary" title="Clear filter">
+                <i class="fas fa-times"></i>
+            </a>
+        {% endif %}
+    </div>
+    {% if standalone_form and show_button %}
+        <button type="submit" class="btn btn-secondary{% if input_size %} btn-{{ input_size }}{% endif %} px-3 fw-bold">{{ button_text }}</button>
+    {% endif %}
+{% if standalone_form %}</form>{% endif %}
+{% endmacro %}

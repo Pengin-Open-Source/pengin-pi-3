@@ -1,0 +1,23 @@
+# do not push .env, api keys, or .sqlite files to GitHub
+*.sqlite3
+*.sqlite
+*__pycache__
+*.py[cod]
+auth
+venv
+.githubs
+.github
+*.log
+instance
+.vscode
+.env
+/env
+/media
+containers.json
+ACME.json
+public-endpoint.json
+app/static/robots.txt
+app/static/sitemap.xml
+*.DS_Store
+Favicon.png
+/contracts

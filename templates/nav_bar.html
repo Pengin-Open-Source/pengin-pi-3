@@ -1,0 +1,108 @@
+{% load static %}
+<!-- Navigation Overhauled using pure Bootstrap Utility classes with Zero Style Blocks -->
+<nav class="navbar navbar-expand-lg bg-secondary text-uppercase fixed-top py-4" id="mainNav" style="transition: padding 0.25s ease-in-out;">
+
+    <!-- DESKTOP ABSOLUTE TOP-LEFT SHIELD -->
+    <div class="d-none d-lg-block position-absolute top-0 start-0 z-3">
+        <a id="desktopBrandShield" class="bg-white d-flex align-items-center justify-content-center shadow rounded-bottom-4 p-3 border border-top-0" href="/" style="width: 195px; height: 165px; transition: all 0.25s ease-in-out;">
+            <img src="{% static 'images/logo.svg' %}" alt="Site Logo" class="img-fluid h-100 object-fit-contain" />
+        </a>
+    </div>
+
+    <!-- DESKTOP AUTH ZONE -->
+    <div id="desktopAuthZone" class="d-none d-lg-block position-absolute top-0 end-0 z-3" style="transition: all 0.25s ease-in-out;">
+        <div class="bg-dark bg-opacity-75 px-3 py-1 rounded-bottom border border-top-0 border-secondary shadow-sm d-flex align-items-center gap-2">
+            {% if user.is_authenticated %}
+                <a class="text-white text-decoration-none small fw-bold px-1" style="font-size: 0.75rem;" href="/profile">Profile</a>
+                <a class="btn btn-outline-light btn-sm py-0 px-2 fw-semibold" style="font-size: 0.7rem;" href="{% url 'logout' %}">Logout <i class="fas fa-sign-out-alt ms-1"></i></a>
+            {% else %}
+                <a class="text-white text-decoration-none small fw-bold px-1" style="font-size: 0.75rem;" href="/login">Login</a>
+                <span class="text-white-50 small">|</span>
+                <a class="btn btn-primary btn-sm py-0 px-2 fw-bold text-white" style="font-size: 0.7rem;" href="/signup">Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+
+        <!-- Mobile Toggle Button -->
+        <button class="navbar-toggler text-uppercase font-weight-bold bg-primary text-white rounded ms-auto ms-lg-0 order-3" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            Menu <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="collapse navbar-collapse w-100 order-1" id="navbarResponsive">
+            <div class="d-none d-lg-block w-100">
+                <!-- DESKTOP LINKS CONTAINER -->
+                <div id="desktopNavLinks" class="d-flex w-100 justify-content-end align-items-center" style="margin-left: 215px; transition: margin-left 0.25s ease-in-out;">
+                    <!-- Add your own app nav links here as apps are ported in. -->
+                    <ul class="navbar-nav flex-row flex-nowrap align-items-center gap-2">
+                        {% if user.is_authenticated and user.is_staff %}
+                            <li class="nav-item text-nowrap"><a class="nav-link py-2 px-2 rounded text-info fw-bold" href="/admin"><i class="fas fa-user-shield me-1"></i> Admin Console</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- MOBILE FALLBACK MATRIX -->
+            <div class="d-lg-none w-100">
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated and user.is_staff %}
+                        <li class="nav-item"><a class="nav-link py-2 rounded text-info fw-bold" href="/admin">Admin Console</a></li>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                      <li class="nav-item"><a class="nav-link py-2 rounded text-white" href="/profile">Profile</a></li>
+                      <li class="nav-item"><a class="nav-link py-2 rounded text-white" href="{% url 'logout' %}">Logout</a></li>
+                    {% else %}
+                      <li class="nav-item"><a class="nav-link py-2 rounded text-white" href="/login">Login</a></li>
+                      <li class="nav-item"><a class="nav-link py-2 rounded text-white" href="/signup">Sign Up</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- MOBILE LOGO -->
+        <div class="d-block d-lg-none me-auto order-2">
+            <a class="bg-white d-inline-flex align-items-center justify-content-center rounded p-2 border" href="/" style="height: 48px;">
+                <img src="{% static 'images/logo.svg' %}" alt="Site Logo" class="img-fluid h-100 object-fit-contain" style="max-width: 130px;" />
+            </a>
+        </div>
+
+    </div>
+</nav>
+
+<!-- Nav Scroll Shrink Script -->
+<script>
+    (function() {
+        var mainNav = document.getElementById('mainNav');
+        var desktopShield = document.getElementById('desktopBrandShield');
+        var desktopNavLinks = document.getElementById('desktopNavLinks');
+        var authZone = document.getElementById('desktopAuthZone');
+
+        if (mainNav && desktopShield && desktopNavLinks) {
+            var toggleNavbarSize = function() {
+                if (window.scrollY > 60) {
+                    mainNav.classList.remove('py-4');
+                    mainNav.classList.add('py-1');
+                    desktopShield.style.width = '145px';
+                    desktopShield.style.height = '75px';
+                    desktopShield.style.padding = '8px';
+                    desktopNavLinks.style.marginLeft = '160px';
+                    if (authZone) authZone.style.opacity = '0.85';
+                } else {
+                    mainNav.classList.remove('py-1');
+                    mainNav.classList.add('py-4');
+                    desktopShield.style.width = '195px';
+                    desktopShield.style.height = '165px';
+                    desktopShield.style.padding = '16px';
+                    desktopNavLinks.style.marginLeft = '215px';
+                    if (authZone) authZone.style.opacity = '1';
+                }
+            };
+
+            toggleNavbarSize();
+            window.addEventListener('scroll', toggleNavbarSize);
+            window.addEventListener('DOMContentLoaded', toggleNavbarSize);
+        }
+    })();
+</script>

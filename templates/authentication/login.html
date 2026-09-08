@@ -1,0 +1,120 @@
+{% extends "layout/no_contact.html" %}
+{% load static %}
+{% block page_title %}
+  {% if title %}
+    <title>{{ company_name|default:"Pengin Pi 3"|escape }} - {{ title|escape }}</title>
+  {% elif page_title %}
+    <title>{{ company_name|default:"Pengin Pi 3"|escape }} - {{ page_title|escape }}</title>
+  {% else %}
+    <title>{{ company_name|default:"Pengin Pi 3" }} - Login Page</title>
+  {% endif %}
+{% endblock %}
+{% block pageContent %}
+<section class="page-section bg-light text-dark py-4 mb-0">
+    <!-- Compact heading clearing the navbar -->
+<div class="container pt-5 mt-5 text-center">
+    <h1 class="page-section-heading text-uppercase text-secondary mb-0 mt-3">{{ primary_title }}</h1>
+    
+    <!-- Unified Corporate Icon Divider -->
+    <div class="divider-custom my-4">
+        <div class="divider-custom-line"></div>
+        <div class="divider-custom-icon"><i class="fas fa-star"></i></div>
+        <div class="divider-custom-line"></div>
+    </div>
+</div>
+<div class="container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            
+            <!-- Django Toast Notification Alerts Box -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm mb-4" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Clean Login Card Structure -->
+            <div class="card border-0 shadow-sm rounded-3 bg-light p-4 mb-5">
+                <div class="card-body">
+                    
+                    <form id="auth-form" method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        
+                        <!-- Hidden input for reCAPTCHA token -->
+                        <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
+
+                        <!-- Hidden input for Next redirect target -->
+                        {% if request.GET.next %}
+                            <input type="hidden" name="next" value="{{ request.GET.next }}">
+                        {% elif request.POST.next %}
+                            <input type="hidden" name="next" value="{{ request.POST.next }}">
+                        {% endif %}
+
+                        <!-- Form Render Block -->
+                        <div class="mb-3 text-start">
+                            {{ form.as_p }}
+                        </div>
+                        
+                        <!-- Forgot Password link -->
+                        <div class="text-end mb-3">
+                            <a href="{% url 'generate_prt' %}" class="small text-decoration-none" style="color: #1A6C9B;">
+                                Forgot your password?
+                            </a>
+                        </div>
+
+                        <!-- Login CTA Button -->
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-lg text-white fw-bold text-uppercase rounded-3 shadow-sm" style="background-color: #1A6C9B; border-color: #1A6C9B;">
+                                <i class="fas fa-sign-in-alt me-2"></i> Login
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+{% include "components/divider.html" %}
+{% endblock %}
+
+{% block captchaScript %}
+{% if site_key %}
+<script src="https://www.google.com/recaptcha/api.js?render={{ site_key }}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const siteKey = "{{ site_key }}";
+    const authForm = document.getElementById("auth-form");
+    const tokenInput = document.getElementById("g-recaptcha-response");
+
+    if (!authForm || !tokenInput) return;
+
+    authForm.addEventListener("submit", function(e) {
+      if (tokenInput.value) {
+        return true;
+      }
+
+      e.preventDefault();
+
+      if (typeof grecaptcha === "undefined") {
+        authForm.submit();
+        return;
+      }
+
+      grecaptcha.ready(function() {
+        grecaptcha.execute(siteKey, { action: 'login' }).then(function(token) {
+          tokenInput.value = token;
+          authForm.submit();
+        }).catch(function(err) {
+          console.error("reCAPTCHA Error:", err);
+          authForm.submit();
+        });
+      });
+    });
+  });
+</script>
+{% endif %}
+{% endblock %}
