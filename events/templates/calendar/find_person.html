@@ -1,0 +1,53 @@
+{% extends "layout/no_contact.html" %}
+
+{% block pageContent %}
+<!-- SECTION: Find a Person -->
+<section class="page-section bg-light text-dark mb-0 py-5">
+<div class="container px-4 px-lg-5 pt-5 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <h1 class="h3 fw-bold text-secondary mb-0">{{ primary_title }}</h1>
+        <a href="{% url 'events:calendar' %}" class="btn btn-outline-secondary btn-sm fw-semibold">
+            <i class="fas fa-calendar me-1"></i> Back to Calendar
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <p class="text-muted small mb-3">
+                Search by the exact name or email of the person whose reservable event you're looking for.
+            </p>
+            <form method="GET" class="row g-2">
+                <div class="col-auto flex-grow-1">
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Exact name or email...">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="fas fa-search me-1"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if query %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                {% if matches %}
+                    <p class="text-muted small mb-3">Multiple reservable events matched - pick one:</p>
+                    <div class="list-group">
+                        {% for event in matches %}
+                            <a href="{% url 'events:reserve_slot' event.id %}" class="list-group-item list-group-item-action">
+                                <div class="fw-semibold">{{ event.title }}</div>
+                                <div class="small text-muted">{{ event.organizer.name }} &middot; {{ event.start_datetime|date:"l, F j, Y g:i A" }}</div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No reservable event found for that exact name or email.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+</section>
+{% endblock %}

@@ -1,6 +1,6 @@
 # main/urls.py
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from django.contrib.sitemaps.views import sitemap
 from main.views import (
     LoginView, SignupView, LogoutView,
@@ -47,6 +47,9 @@ urlpatterns = [
     path('slug/create/', SlugCreateView.as_view(), name='slug'),
     path('slug/edit/<uuid:slug_id>/', SlugEditView.as_view(), name='slug_edit'),
     path('slug/delete/', SlugDeleteView.as_view(), name='slug_delete'),
+
+    # App routes
+    path('', include('events.urls')),
 
     # Catch-all slug routes MUST stay at the very bottom
     path('<path:slug_path>/', SlugView.as_view()),

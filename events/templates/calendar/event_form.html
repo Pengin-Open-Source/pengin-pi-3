@@ -1,0 +1,150 @@
+{% extends "layouts/centered-card-form.html" %}
+
+{% block top_left %}
+    {% if action == "update" %}
+        <a href="{% url 'events:event_detail' event.id %}" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    {% else %}
+        <a href="{% url 'events:calendar' %}" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    {% endif %}
+    <h1 class="h3 fw-bold text-secondary m-0">{{ primary_title }}</h1>
+{% endblock %}
+
+{% block middle_article %}
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger p-3 rounded mb-4">
+            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="row g-4 text-start">
+
+            <div class="col-12">
+                <div class="card border shadow-sm">
+                    <div class="card-header bg-light fw-bold text-secondary">
+                        <i class="fas fa-calendar-day me-1"></i> Event Details
+                    </div>
+                    <div class="card-body row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary mb-1">Title</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary mb-1">Description</label>
+                            {{ form.description }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Location</label>
+                            {{ form.location }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Visibility</label>
+                            {{ form.visibility }}
+                            {% if form.visibility.errors %}<div class="text-danger small mt-1">{{ form.visibility.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Start Date &amp; Time</label>
+                            {{ form.start_datetime }}
+                            {% if form.start_datetime.errors %}<div class="text-danger small mt-1">{{ form.start_datetime.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">End Date &amp; Time</label>
+                            {{ form.end_datetime }}
+                            {% if form.end_datetime.errors %}<div class="text-danger small mt-1">{{ form.end_datetime.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card border shadow-sm">
+                    <div class="card-header bg-light fw-bold text-secondary">
+                        <i class="fas fa-users me-1"></i> Organizer, Roles &amp; Participants
+                    </div>
+                    <div class="card-body row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Organizer</label>
+                            {{ form.organizer }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Visible to Roles</label>
+                            {{ form.roles }}
+                            <div class="form-text text-muted small">Leave blank to make this event visible regardless of role.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary mb-1">Participants</label>
+                            {{ form.participants }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card border shadow-sm">
+                    <div class="card-header bg-light fw-bold text-secondary">
+                        <i class="fas fa-clock me-1"></i> Reservable Time &amp; Recurrence
+                    </div>
+                    <div class="card-body row g-3">
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                {{ form.is_public_reservable_time }}
+                                <label class="form-check-label small fw-bold text-secondary" for="{{ form.is_public_reservable_time.id_for_label }}">
+                                    {{ form.is_public_reservable_time.label }}
+                                </label>
+                            </div>
+                            <div class="form-text text-muted small">Any validated, active user may book a slot.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check">
+                                {{ form.is_internal_reservable_time }}
+                                <label class="form-check-label small fw-bold text-secondary" for="{{ form.is_internal_reservable_time.id_for_label }}">
+                                    {{ form.is_internal_reservable_time.label }}
+                                </label>
+                            </div>
+                            <div class="form-text text-muted small">Staff, or members of the roles above, may book a slot.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">Slot Length (minutes)</label>
+                            {{ form.slot_duration_minutes }}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.is_recurring }}
+                                <label class="form-check-label small fw-bold text-secondary" for="{{ form.is_recurring.id_for_label }}">
+                                    {{ form.is_recurring.label }}
+                                </label>
+                            </div>
+                            <div class="form-text text-muted small">Repeats weekly on the same day/time as the start above.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary mb-1">Recur Until</label>
+                            {{ form.recur_until }}
+                            {% if form.recur_until.errors %}<div class="text-danger small mt-1">{{ form.recur_until.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-4 pt-3 border-top d-flex gap-2">
+            {% if action == "update" %}
+                <button type="submit" class="btn btn-primary px-4 shadow-sm fw-semibold">
+                    <i class="fas fa-save me-1"></i> Save Changes
+                </button>
+                <a href="{% url 'events:event_detail' event.id %}" class="btn btn-outline-secondary px-3">Cancel</a>
+            {% else %}
+                <button type="submit" class="btn btn-primary px-4 shadow-sm fw-semibold">
+                    <i class="fas fa-plus-circle me-1"></i> Create Event
+                </button>
+                <a href="{% url 'events:calendar' %}" class="btn btn-outline-secondary px-3">Cancel</a>
+            {% endif %}
+        </div>
+    </form>
+{% endblock %}

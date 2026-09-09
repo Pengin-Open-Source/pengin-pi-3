@@ -1,0 +1,67 @@
+{% extends "layout/no_contact.html" %}
+
+{% block pageContent %}
+<!-- SECTION: My Reservations -->
+<section class="page-section bg-light text-dark mb-0 py-5">
+<div class="container px-4 px-lg-5 pt-5 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <h1 class="h3 fw-bold text-secondary mb-0">{{ primary_title }}</h1>
+        <a href="{% url 'events:calendar' %}" class="btn btn-outline-secondary btn-sm fw-semibold">
+            <i class="fas fa-calendar me-1"></i> Back to Calendar
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} p-3 rounded mb-4">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            {% if reservations %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th>Event</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Organizer</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in reservations %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'events:event_detail' reservation.event.id %}" class="fw-semibold text-decoration-none">
+                                            {{ reservation.event.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ reservation.occurrence_date|date:"M j, Y" }}</td>
+                                    <td>{{ reservation.slot_start|date:"g:i A" }} - {{ reservation.slot_end|date:"g:i A" }}</td>
+                                    <td>{{ reservation.event.organizer.name }}</td>
+                                    <td class="text-end">
+                                        <form method="POST" action="{% url 'events:cancel_reservation' reservation.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="fas fa-times me-1"></i> Cancel
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">You have no upcoming reservations.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}

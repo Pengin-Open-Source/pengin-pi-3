@@ -1,0 +1,110 @@
+{% extends "layout/no_contact.html" %}
+{% load macros %}
+{% loadmacros "macros/pagination.html" %}
+
+{% block pageContent %}
+<!-- SECTION: Event Detail -->
+<section class="page-section bg-light text-dark mb-0 py-5">
+<div class="container px-4 px-lg-5 pt-5 mt-4">
+    <div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom">
+        <div>
+            <a href="{% url 'events:calendar' %}" class="small text-primary text-decoration-none fw-semibold d-block mb-2">
+                <i class="fas fa-arrow-left me-1"></i> Back to Calendar
+            </a>
+            <h1 class="h3 fw-bold text-secondary mb-0">{{ event.title }}</h1>
+        </div>
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+            {% if can_see_all_details %}
+                <a href="{% url 'events:copy_event' event.id %}" class="btn btn-outline-secondary btn-sm fw-semibold">
+                    <i class="fas fa-copy me-1"></i> Duplicate
+                </a>
+                <a href="{% url 'events:display_event_participants' event.id %}" class="btn btn-outline-secondary btn-sm fw-semibold">
+                    <i class="fas fa-users me-1"></i> Participants
+                </a>
+            {% endif %}
+            <a href="{% url 'events:event_ics' event.id %}" class="btn btn-outline-secondary btn-sm fw-semibold">
+                <i class="fas fa-calendar-plus me-1"></i> Add to Calendar
+            </a>
+            {% if can_reserve %}
+                <a href="{% url 'events:reserve_slot' event.id %}?occurrence={{ occurrence_date|date:'Y-m-d' }}" class="btn btn-primary btn-sm fw-semibold shadow-sm">
+                    <i class="fas fa-clock me-1"></i> Reserve a Time
+                </a>
+            {% endif %}
+            {% if can_change %}
+                <a href="{% url 'events:event_edit' event.id %}" class="btn btn-outline-primary btn-sm fw-semibold">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+                <a href="{% url 'events:event_delete' event.id %}" class="btn btn-outline-danger btn-sm fw-semibold">
+                    <i class="fas fa-trash-alt me-1"></i> Delete
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                {% if event.visibility == "public" %}
+                    <span class="badge bg-info text-dark"><i class="fas fa-globe me-1"></i> Public Event</span>
+                {% elif event.visibility == "validated_public" %}
+                    <span class="badge bg-success"><i class="fas fa-user-check me-1"></i> Validated Public Event</span>
+                {% else %}
+                    <span class="badge bg-secondary"><i class="fas fa-lock me-1"></i> Internal Event</span>
+                {% endif %}
+                {% if event.is_recurring %}
+                    <span class="badge bg-light text-secondary border"><i class="fas fa-redo me-1"></i> Recurs weekly until {{ event.recur_until|date:"M j, Y" }}</span>
+                {% endif %}
+                {% if event.last_edited_by %}
+                    <span class="small text-muted">Last edited by {{ event.last_edited_by.name|escape }} on {{ event.date|date:"M j, Y g:i A" }}</span>
+                {% else %}
+                    <span class="small text-muted">Created by {{ event.author.name|escape }} on {{ event.date_created|date:"M j, Y g:i A" }}</span>
+                {% endif %}
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <span class="text-muted d-block fs-7">Organizer</span>
+                    <span class="fw-semibold">{{ event.organizer.name }}</span>
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted d-block fs-7">Location</span>
+                    <span class="fw-semibold">{{ event.location|default:"TBD" }}</span>
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted d-block fs-7">Starts</span>
+                    {% if event.is_recurring %}
+                        <span class="fw-semibold">{{ occurrence_date|date:"l, F j, Y" }} {{ event.start_time }}</span>
+                    {% else %}
+                        <span class="fw-semibold">{{ event.start_datetime|date:"l, F j, Y g:i A" }}</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted d-block fs-7">Ends</span>
+                    {% if event.is_recurring %}
+                        <span class="fw-semibold">{{ occurrence_date|date:"l, F j, Y" }} {{ event.end_time }}</span>
+                    {% else %}
+                        <span class="fw-semibold">{{ event.end_datetime|date:"l, F j, Y g:i A" }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if event.description %}
+                <hr>
+                <p class="text-secondary lh-base mb-0" style="white-space: pre-line;">{{ event.description }}</p>
+            {% endif %}
+
+            {% if can_see_all_details and event_roles %}
+                <hr>
+                <span class="text-muted d-block fs-7 mb-2">Visible to Roles</span>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    {% for role in event_roles %}
+                        <span class="badge bg-light text-secondary border">{{ role.name }}</span>
+                    {% endfor %}
+                </div>
+                {% use_macro render_pagination role_page_obj %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+</section>
+{% endblock %}
