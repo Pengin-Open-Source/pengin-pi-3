@@ -1,5 +1,6 @@
 # events/views.py
 import json
+import os
 from datetime import datetime
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
@@ -27,10 +28,19 @@ from main.auth.events import (
 from main.models.users import User
 from main.models import Event, EventParticipant, EventReservation
 from util.dynamic_render import render_dynamic_content
+from util.security.ratelimit import RateLimitedPostMixin
+from util.security.recaptcha import RecaptchaRequiredMixin
 from .calendar import EventCalendar
 from .forms import EventForm, CalendarSettingsForm
 
 myCal = EventCalendar()
+
+# A validated customer account could otherwise reserve an unbounded number
+# of slots (nothing else in the flow limits this) - a soft cap on how many
+# still-upcoming reservations one user may hold at once, independent of
+# rate limiting (which only slows down request frequency, not total held
+# slots).
+MAX_UPCOMING_RESERVATIONS_PER_USER = 3
 
 
 class CalendarMonth(PublicEventsOrLoggedInMixin, View):
@@ -177,7 +187,7 @@ class EventParticipantsDetailView(LoginAndValidationRequiredMixin, UserPassesTes
         })
 
 
-class CreateEvent(LoginAndValidationRequiredMixin, UserPassesTestMixin, View):
+class CreateEvent(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPassesTestMixin, View):
     template_name = "calendar/event_form.html"
 
     def test_func(self):
@@ -238,7 +248,7 @@ class CreateEvent(LoginAndValidationRequiredMixin, UserPassesTestMixin, View):
         })
 
 
-class EditEvent(LoginAndValidationRequiredMixin, UserPassesTestMixin, View):
+class EditEvent(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPassesTestMixin, View):
     template_name = "calendar/event_form.html"
 
     def test_func(self):
@@ -281,7 +291,7 @@ class EditEvent(LoginAndValidationRequiredMixin, UserPassesTestMixin, View):
         return render(request, self.template_name, context)
 
 
-class DeleteEvent(LoginAndValidationRequiredMixin, UserPassesTestMixin, View):
+class DeleteEvent(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPassesTestMixin, View):
     template_name = "calendar/event_confirm_delete.html"
 
     def test_func(self):
@@ -344,11 +354,18 @@ class EventICSExportView(PublicEventsOrLoggedInMixin, UserPassesTestMixin, View)
         return response
 
 
-class ReserveEventSlotView(LoginAndValidationRequiredMixin, UserPassesTestMixin, View):
+class ReserveEventSlotView(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPassesTestMixin, RecaptchaRequiredMixin, View):
     """Lists available slots for one occurrence of a reservable event and
     books one. ?occurrence=YYYY-MM-DD picks which week's occurrence (for a
-    recurring event); defaults to the event's own start date."""
+    recurring event); defaults to the event's own start date. Login is
+    already required, but a compromised or scripted validated account
+    could still hammer this endpoint or hold an unbounded number of
+    slots, so it's also rate-limited, reCAPTCHA-gated (every slot button
+    is its own one-click form - see templates/widgets/slot-picker.html's
+    per-form token wiring, since a single-form-id macro doesn't fit that
+    shape), and capped at MAX_UPCOMING_RESERVATIONS_PER_USER."""
     template_name = "calendar/reserve_slot.html"
+    ratelimit_rate = '10/m'
 
     def test_func(self):
         event = get_object_or_404(Event, id=self.kwargs.get("pk"))
@@ -386,12 +403,24 @@ class ReserveEventSlotView(LoginAndValidationRequiredMixin, UserPassesTestMixin,
             "occurrence_date": occurrence_date,
             "slots": slots,
             "form_action": form_action,
+            "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY"),
         })
 
     def post(self, request, pk):
         event = get_object_or_404(Event, id=pk)
         occurrence_date = self.get_occurrence_date(request, event)
         slot_start_str = request.POST.get('slot')
+
+        upcoming_count = EventReservation.objects.filter(
+            reserved_by=request.user, slot_start__gte=timezone.now()
+        ).count()
+        if upcoming_count >= MAX_UPCOMING_RESERVATIONS_PER_USER:
+            messages.error(
+                request,
+                f"You already have {upcoming_count} upcoming appointments - the most we allow at once is "
+                f"{MAX_UPCOMING_RESERVATIONS_PER_USER}. Cancel one first, or call us to arrange more."
+            )
+            return redirect('events:my_reservations')
 
         try:
             slot_start = datetime.fromisoformat(slot_start_str)
@@ -458,7 +487,9 @@ class FindPersonEventView(LoginAndValidationRequiredMixin, View):
         })
 
 
-class CancelReservationView(LoginAndValidationRequiredMixin, UserPassesTestMixin, View):
+class CancelReservationView(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPassesTestMixin, View):
+    ratelimit_rate = '20/m'
+
     def test_func(self):
         reservation = get_object_or_404(EventReservation, id=self.kwargs.get("pk"))
         return self.request.user == reservation.reserved_by or self.request.user.is_staff
