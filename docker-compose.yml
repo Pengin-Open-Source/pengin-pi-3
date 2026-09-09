@@ -74,7 +74,7 @@
       volumes:
         - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
         - ./nginx_blocklist.conf:/etc/nginx/conf.d/blocklist.conf:ro
-        - ./logs/nginx:/var/log/nginx
+        - ./logs/nginx:/var/log/nginx:z
         - static_volume:/app/staticfiles:ro
         - ./media:/app/media:ro
       depends_on:
