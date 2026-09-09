@@ -5,7 +5,14 @@
       restart: always
       volumes:
         - postgres_data:/var/lib/postgresql/data
-        - ./docker-entrypoint-initdb:/docker-entrypoint-initdb.d:ro
+        # A directory bind mount here would shadow the image's own baked-in
+        # /docker-entrypoint-initdb.d/10-preload.sh + 20-install.sql, which
+        # is what actually installs the documentdb_api extension FerretDB
+        # needs - without them, every FerretDB operation fails with
+        # 'schema "documentdb_api" does not exist'. Mount our script as a
+        # single file (numbered to run after those) so it adds to that
+        # directory instead of replacing it.
+        - ./docker-entrypoint-initdb/01-create-app-db.sh:/docker-entrypoint-initdb.d/30-create-app-db.sh:ro
       environment:
         # DocumentDB's extension (via pg_cron) can only be installed into
         # the FERRETDB_DB database - docker-entrypoint-initdb/01-create-app-db.sh

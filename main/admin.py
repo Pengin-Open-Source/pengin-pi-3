@@ -49,9 +49,9 @@ class RobotsRuleAdmin(admin.ModelAdmin):
 
 @admin.register(Slug)
 class SlugAdmin(admin.ModelAdmin):
-    list_display = ("name", "parent", "author", "date")
-    search_fields = ("name",)
-    list_filter = ("date",)
+    list_display = ("name", "parent", "template_name", "is_dynamic", "author", "date")
+    list_filter = ("date", "is_dynamic")
+    search_fields = ("name", "template_name")
 
 @admin.register(SlugHistory)
 class SlugHistoryAdmin(admin.ModelAdmin):

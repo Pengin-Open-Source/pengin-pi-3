@@ -60,6 +60,14 @@
   
   {% include "copyright.html" %}
 
+  {% if is_admin and slug %}
+    <a href="{% url 'slug_edit' slug.id %}"
+       class="btn btn-warning shadow position-fixed d-flex align-items-center gap-2 fw-semibold"
+       style="bottom: 20px; right: 20px; z-index: 1040; border-radius: 2rem;">
+        <i class="fas fa-pen"></i> Edit This Page
+    </a>
+  {% endif %}
+
   <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'javascript/htmx/2.0.4/htmx.min.js' %}"></script>
   {% block captchaScript %}{% endblock %}
