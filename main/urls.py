@@ -6,6 +6,7 @@ from main.views import (
     LoginView, SignupView, LogoutView,
     PasswordResetRequestView, PasswordResetView,
     SlugCreateView, SlugEditView, SlugDeleteView, SlugView,
+    SlugDynamicCreateView, SlugDynamicEditView,
     ProfileView, SendEmailView, ValidateView, EditPasswordView,
     robots_txt
 )
@@ -47,6 +48,13 @@ urlpatterns = [
     path('slug/create/', SlugCreateView.as_view(), name='slug'),
     path('slug/edit/<uuid:slug_id>/', SlugEditView.as_view(), name='slug_edit'),
     path('slug/delete/', SlugDeleteView.as_view(), name='slug_delete'),
+
+    # Dynamic slug instance routes: pk in slug_parent/<uuid:parent_id>/...
+    # is the is_dynamic=True Slug whose json schema drives the form.
+    path('slug_parent/<uuid:parent_id>/create/',
+         SlugDynamicCreateView.as_view(), name='slug_dynamic_create'),
+    path('slug_parent/<uuid:parent_id>/<uuid:slug_id>/edit/',
+         SlugDynamicEditView.as_view(), name='slug_dynamic_edit'),
 
     # Catch-all slug routes MUST stay at the very bottom
     path('<path:slug_path>/', SlugView.as_view()),
