@@ -33,3 +33,18 @@ def sync_team_role_groups(user, previous_role_ids, current_role_ids):
         )
         for group_id in removed_groups - still_justified:
             user.groups.remove(group_id)
+
+
+def cascade_is_staff(user):
+    """Holding any team role means you're internal staff by definition -
+    flip is_staff on if it isn't already. One-directional: removing every
+    team role later does NOT auto-unstaff someone, matching the "additive,
+    never blindly strip" spirit of sync_team_role_groups() above -
+    is_staff stays a normal, independently-editable field the rest of the
+    time. Promoted out of tools' user-manager view - this is the same
+    category of "keep derived state consistent with TeamUserRole" policy
+    as sync_team_role_groups, not tools-specific UI glue, so any future
+    role-assignment surface gets the same behavior for free."""
+    if not user.is_staff and TeamUserRole.objects.filter(user=user).exists():
+        user.is_staff = True
+        user.save()
