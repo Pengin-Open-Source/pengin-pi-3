@@ -12,9 +12,13 @@
 #   principals.py            - small Need/RoleNeed/ItemNeed ACL toolkit
 #   context_processors.py    - template context (auth_context)
 #   admin.py                  - Django admin registrations
-#   sync.py                   - keeps flat auth.Group membership in sync
-#                               with TeamUserRole assignments, for apps
-#                               that gate on Group directly
+#   sync.py                   - keeps flat auth.Group membership (and
+#                               User.is_staff) in sync with TeamUserRole
+#                               assignments, for apps that gate on Group
+#                               directly
+#   forms.py                   - TeamRoleAssignmentForm/FormSet, the
+#                               canonical UI for assigning a TeamRole to a
+#                               User
 #   events.py                 - main.models.Event access control (visibility,
 #                               can_change_event, reservation eligibility,
 #                               staff calendar scoping) - event tracking is
@@ -40,7 +44,8 @@ from .permissions import (
 from .mixins import LoginAndValidationRequiredMixin, StaffRequiredMixin
 from .decorators import group_required, is_admin_provider, is_admin_required, user_group_provider
 from .principals import Need, UserNeed, RoleNeed, TypeNeed, ActionNeed, ItemNeed, PermissionDenied
-from .sync import sync_team_role_groups
+from .sync import sync_team_role_groups, cascade_is_staff
+from .forms import TeamRoleAssignmentForm, TeamRoleAssignmentFormSet
 from .events import (
     can_create_or_see_all_event_details,
     can_see_public_event,
@@ -66,6 +71,9 @@ __all__ = [
     'group_required', 'is_admin_provider', 'is_admin_required', 'user_group_provider',
     'Need', 'UserNeed', 'RoleNeed', 'TypeNeed', 'ActionNeed', 'ItemNeed', 'PermissionDenied',
     'sync_team_role_groups',
+    'cascade_is_staff',
+    'TeamRoleAssignmentForm',
+    'TeamRoleAssignmentFormSet',
     'can_create_or_see_all_event_details',
     'can_see_public_event',
     'can_see_validated_public_event',
