@@ -12,6 +12,9 @@
 #   principals.py            - small Need/RoleNeed/ItemNeed ACL toolkit
 #   context_processors.py    - template context (auth_context)
 #   admin.py                  - Django admin registrations
+#   sync.py                   - keeps flat auth.Group membership in sync
+#                               with TeamUserRole assignments, for apps
+#                               that gate on Group directly
 #
 # Registered under the 'main' app (see main/models/__init__.py) - there is
 # no separate 'auth' Django app, and no separate migrations directory;
@@ -31,6 +34,7 @@ from .permissions import (
 from .mixins import LoginAndValidationRequiredMixin, StaffRequiredMixin
 from .decorators import group_required, is_admin_provider, is_admin_required, user_group_provider
 from .principals import Need, UserNeed, RoleNeed, TypeNeed, ActionNeed, ItemNeed, PermissionDenied
+from .sync import sync_team_role_groups
 
 __all__ = [
     'TeamRole', 'TeamRoleHistory', 'TeamUserRole', 'TeamUserRoleHistory',
@@ -40,4 +44,5 @@ __all__ = [
     'LoginAndValidationRequiredMixin', 'StaffRequiredMixin',
     'group_required', 'is_admin_provider', 'is_admin_required', 'user_group_provider',
     'Need', 'UserNeed', 'RoleNeed', 'TypeNeed', 'ActionNeed', 'ItemNeed', 'PermissionDenied',
+    'sync_team_role_groups',
 ]

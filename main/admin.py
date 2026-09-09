@@ -1,7 +1,7 @@
 # admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from .models import User, UserHistory, Address, AddressHistory, Slug, SlugHistory, RobotsRule
+from .models import User, UserHistory, Site, SiteHistory, Slug, SlugHistory, RobotsRule
 from main.auth import admin as auth_admin  # noqa: F401 - registers TeamRole/TeamUserRole admin
 
 
@@ -57,5 +57,21 @@ class SlugHistoryAdmin(admin.ModelAdmin):
 
 
 
-admin.site.register(Address)
-admin.site.register(AddressHistory)
+class SiteHistoryInline(admin.TabularInline):
+    model = SiteHistory
+    fk_name = "object"
+    extra = 0
+    readonly_fields = ("changed_at", "user", "snapshot")
+    can_delete = False
+    ordering = ("-changed_at",)
+
+
+@admin.register(Site)
+class SiteAdmin(admin.ModelAdmin):
+    list_display = ("company_name", "city", "state", "phone", "updated_at")
+    inlines = [SiteHistoryInline]
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            obj.save_history(user=request.user)
+        super().save_model(request, obj, form, change)

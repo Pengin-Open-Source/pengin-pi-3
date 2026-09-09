@@ -94,6 +94,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'util.context_processors.recaptcha_context',
                 'main.auth.context_processors.auth_context',
+                'main.context_processors.site_context',
             ],
         },
     },

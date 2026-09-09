@@ -1,5 +1,5 @@
 from .users import User, UserHistory
-from .address import Address, AddressHistory
+from .site import Site, SiteHistory
 from .slug import Slug, SlugHistory
 from .mixins import HistoryMixin, AbstractHistory
 from .seo import RobotsRule
@@ -14,8 +14,8 @@ from main.auth.models import TeamRole, TeamRoleHistory, TeamUserRole, TeamUserRo
 __all__ = [
     'User',
     'UserHistory',
-    'Address',
-    'AddressHistory',
+    'Site',
+    'SiteHistory',
     'Slug',
     'SlugHistory',
     'HistoryMixin',
