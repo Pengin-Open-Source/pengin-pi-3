@@ -1,9 +1,8 @@
 import json
 import os
 
+from django.apps import apps
 from django.http import HttpResponse, HttpResponseForbidden, Http404
-from django.template import Template, RequestContext
-from django.template.loader import get_template
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin  # Replaces @method_decorator(login_required)
@@ -11,6 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin  # Replaces @method_de
 from .base import SuperTemplateView
 from ..models import Slug
 from main.forms.slug import SlugForm
+from util.dynamic_render import render_dynamic_content
 from util.security.ratelimit import RateLimitedPostMixin
 
 
@@ -79,50 +79,13 @@ class SlugView(SuperTemplateView):
         # Injects remaining raw top-level key/value pairs into context (e.g., {"interview_article": "# ..."})
         context.update(schema_data)
 
-        # Template Resolving Logic
-        template_obj = None
-        is_from_string = False
-
-        if current_slug.render_template:
-            template_string = current_slug.render_template
-            try:
-                # Support legacy render_template fields storing JSON
-                blocks = json.loads(template_string)
-                if isinstance(blocks, dict):
-                    context.update(blocks)
-                if not current_slug.template_name:
-                    template_obj = Template("{{ main|safe }}")
-                    is_from_string = True
-                else:
-                    template_obj = get_template(current_slug.template_name)
-            except json.JSONDecodeError:
-                # Raw template code in render_template. If a template_name
-                # was also named (e.g. "layout.html" or a
-                # "layouts/*.html" file), and the author didn't already
-                # write their own {% extends %} tag, treat render_template
-                # as the block content that fills into that named
-                # template's blocks - auto-prepending the extends so
-                # naming a template actually has an effect. An author who
-                # writes {% extends %} themselves (with or without
-                # template_name set) is always left alone.
-                if current_slug.template_name and not template_string.lstrip().startswith('{% extends'):
-                    template_string = (
-                        f'{{% extends "{current_slug.template_name}" %}}\n{template_string}'
-                    )
-                template_obj = Template(template_string)
-                is_from_string = True
-        elif current_slug.template_name:
-            template_obj = get_template(current_slug.template_name)
-        else:
-            return HttpResponse("")
-
-        # Render Response
-        if is_from_string:
-            rendered = template_obj.render(RequestContext(request, context))
-        else:
-            rendered = template_obj.render(context, request)
-
-        return HttpResponse(rendered)
+        # Template Resolving Logic - shared with main.models.event.Event,
+        # which has the same template_name/render_template/json shape (see
+        # util/dynamic_render.py).
+        response = render_dynamic_content(
+            request, current_slug.template_name, current_slug.render_template, context
+        )
+        return response if response is not None else HttpResponse("")
 
     def handle_missing_slug(self, request):
         path = request.path_info

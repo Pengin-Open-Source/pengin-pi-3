@@ -1,7 +1,10 @@
 # admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-from .models import User, UserHistory, Site, SiteHistory, Slug, SlugHistory, RobotsRule
+from .models import (
+    User, UserHistory, Site, SiteHistory, Slug, SlugHistory, RobotsRule,
+    Event, EventHistory, EventParticipant,
+)
 from main.auth import admin as auth_admin  # noqa: F401 - registers TeamRole/TeamUserRole admin
 
 
@@ -75,3 +78,66 @@ class SiteAdmin(admin.ModelAdmin):
         if change:
             obj.save_history(user=request.user)
         super().save_model(request, obj, form, change)
+
+
+class EventHistoryInline(admin.TabularInline):
+    model = EventHistory
+    extra = 0
+    readonly_fields = ('changed_at', 'user')
+    can_delete = False
+    ordering = ('-changed_at',)
+
+
+class EventParticipantInline(admin.TabularInline):
+    model = EventParticipant
+    extra = 0
+    raw_id_fields = ('participant', 'added_by')
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = (
+        'title',
+        'start_datetime',
+        'end_datetime',
+        'visibility',
+        'is_recurring',
+        'author',
+        'organizer',
+        'date_created',
+    )
+    list_filter = (
+        'visibility',
+        'is_recurring',
+        'is_public_reservable_time',
+        'is_internal_reservable_time',
+        'start_datetime',
+        'date_created',
+    )
+    search_fields = (
+        'title',
+        'description',
+        'location',
+    )
+    raw_id_fields = ('author', 'organizer', 'last_edited_by')
+    filter_horizontal = ('roles',)
+    fieldsets = (
+        (None, {'fields': ('title', 'description', 'location', 'visibility', 'roles')}),
+        ('Schedule', {'fields': ('start_datetime', 'end_datetime', 'is_recurring', 'recur_until')}),
+        ('People', {'fields': ('author', 'organizer', 'last_edited_by')}),
+        ('Reservable Time', {'fields': ('is_public_reservable_time', 'is_internal_reservable_time', 'slot_duration_minutes')}),
+        ('Dynamic Page (advanced - raw Django template code)', {
+            'classes': ('collapse',),
+            'fields': ('template_name', 'render_template', 'json'),
+        }),
+    )
+    inlines = [EventParticipantInline, EventHistoryInline]
+
+    def save_model(self, request, obj, form, change):
+        is_create = not change
+        if is_create and not obj.author_id:
+            obj.author = request.user
+        if is_create and not obj.organizer_id:
+            obj.organizer = request.user
+        super().save_model(request, obj, form, change)
+        obj.save_history(user=request.user)

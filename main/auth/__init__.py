@@ -15,6 +15,12 @@
 #   sync.py                   - keeps flat auth.Group membership in sync
 #                               with TeamUserRole assignments, for apps
 #                               that gate on Group directly
+#   events.py                 - main.models.Event access control (visibility,
+#                               can_change_event, reservation eligibility,
+#                               staff calendar scoping) - event tracking is
+#                               native framework infrastructure (see
+#                               main/models/event.py), so its permission
+#                               logic lives here like everything else's does
 #
 # Registered under the 'main' app (see main/models/__init__.py) - there is
 # no separate 'auth' Django app, and no separate migrations directory;
@@ -35,6 +41,21 @@ from .mixins import LoginAndValidationRequiredMixin, StaffRequiredMixin
 from .decorators import group_required, is_admin_provider, is_admin_required, user_group_provider
 from .principals import Need, UserNeed, RoleNeed, TypeNeed, ActionNeed, ItemNeed, PermissionDenied
 from .sync import sync_team_role_groups
+from .events import (
+    can_create_or_see_all_event_details,
+    can_see_public_event,
+    can_see_validated_public_event,
+    is_any_public_event_available,
+    is_month_too_far_away,
+    can_change_event,
+    can_reserve_public_slot,
+    can_reserve_internal_slot,
+    can_reserve_event,
+    get_available_slots,
+    scope_events_for_staff,
+    filter_events,
+    PublicEventsOrLoggedInMixin,
+)
 
 __all__ = [
     'TeamRole', 'TeamRoleHistory', 'TeamUserRole', 'TeamUserRoleHistory',
@@ -45,4 +66,17 @@ __all__ = [
     'group_required', 'is_admin_provider', 'is_admin_required', 'user_group_provider',
     'Need', 'UserNeed', 'RoleNeed', 'TypeNeed', 'ActionNeed', 'ItemNeed', 'PermissionDenied',
     'sync_team_role_groups',
+    'can_create_or_see_all_event_details',
+    'can_see_public_event',
+    'can_see_validated_public_event',
+    'is_any_public_event_available',
+    'is_month_too_far_away',
+    'can_change_event',
+    'can_reserve_public_slot',
+    'can_reserve_internal_slot',
+    'can_reserve_event',
+    'get_available_slots',
+    'scope_events_for_staff',
+    'filter_events',
+    'PublicEventsOrLoggedInMixin',
 ]
