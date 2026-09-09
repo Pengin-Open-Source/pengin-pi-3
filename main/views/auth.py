@@ -97,7 +97,7 @@ class LoginView(RateLimitedPostMixin, RateLimitedGetMixin, RecaptchaRequiredMixi
             login(request, user)
 
             next_url = request.POST.get('next') or request.GET.get('next')
-            return redirect(next_url or 'home_view')
+            return redirect(next_url or '/')
 
         messages.error(request, 'Please check your login details and try again.')
         return render(request, 'authentication/login.html', {
@@ -147,7 +147,7 @@ class LogoutView(RateLimitedGetMixin, View):
     @method_decorator(login_required)
     def get(self, request):
         logout(request)
-        return redirect('home_view')
+        return redirect('/')
 
 
 class EditPasswordView(LoginRequiredMixin, RateLimitedGetMixin, View):

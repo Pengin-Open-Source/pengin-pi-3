@@ -9,10 +9,14 @@ from .auth import (
     EditPasswordView
 )
 from .slug import (
-    SlugView, 
-    SlugCreateView, 
-    SlugEditView, 
+    SlugView,
+    SlugCreateView,
+    SlugEditView,
     SlugDeleteView
+)
+from .slug_dynamic import (
+    SlugDynamicCreateView,
+    SlugDynamicEditView,
 )
 from .base import SuperTemplateView
 from .profile import ProfileView
@@ -33,6 +37,8 @@ __all__ = [
     'SlugCreateView',
     'SlugEditView',
     'SlugDeleteView',
+    'SlugDynamicCreateView',
+    'SlugDynamicEditView',
     'SuperTemplateView',
     'RedisLoggingMixin',
     'ProfileView',

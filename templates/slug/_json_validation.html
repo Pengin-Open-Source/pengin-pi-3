@@ -1,0 +1,65 @@
+{# templates/slug/_json_validation.html #}
+{# Client-side guard for the Slug create/edit form's `json` field - shared #}
+{# by slug.html and slug_edit.html. This is a UX nicety only: it blocks an #}
+{# obviously-broken submit and shows an inline error without a round trip, #}
+{# but the real validation (structurally valid JSON, and - when is_dynamic #}
+{# is checked - a valid JSON Schema) happens server-side in Slug.clean() #}
+{# (main/models/slug.py), since client-side JS is trivially bypassable. #}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.querySelector('form.needs-validation');
+    var jsonField = document.getElementById('id_json');
+    var dynamicField = document.getElementById('id_is_dynamic');
+    if (!form || !jsonField) return;
+
+    function showError(message) {
+        var existing = jsonField.parentNode.querySelector('.json-client-error');
+        if (existing) existing.remove();
+        var div = document.createElement('div');
+        div.className = 'invalid-feedback d-block json-client-error';
+        div.textContent = message;
+        jsonField.insertAdjacentElement('afterend', div);
+        jsonField.classList.add('is-invalid');
+    }
+
+    function clearError() {
+        var existing = jsonField.parentNode.querySelector('.json-client-error');
+        if (existing) existing.remove();
+        jsonField.classList.remove('is-invalid');
+    }
+
+    function validate() {
+        var raw = jsonField.value.trim();
+        var isDynamic = dynamicField && dynamicField.checked;
+
+        if (!raw) {
+            if (isDynamic) {
+                showError('A dynamic slug requires a JSON Schema in this field.');
+                return false;
+            }
+            clearError();
+            return true;
+        }
+
+        try {
+            JSON.parse(raw);
+        } catch (e) {
+            showError('This isn\'t valid JSON: ' + e.message);
+            return false;
+        }
+
+        clearError();
+        return true;
+    }
+
+    jsonField.addEventListener('blur', validate);
+
+    form.addEventListener('submit', function (e) {
+        if (!validate()) {
+            e.preventDefault();
+            e.stopPropagation();
+            jsonField.focus();
+        }
+    });
+});
+</script>
