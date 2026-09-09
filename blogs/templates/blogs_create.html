@@ -1,0 +1,37 @@
+{% extends "layouts/centered-card-form.html" %}
+
+{% block top_left %}
+    <a href="{% url 'blogs:blogs' %}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div>
+        <h1 class="h3 fw-bold text-secondary m-0">Create Blog Post</h1>
+        <p class="text-muted small mb-0">Publish an update or announcement to the blog.</p>
+    </div>
+{% endblock %}
+
+{% block middle_article %}
+    <form action="{% url 'blogs:create_blog_post' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.errors %}
+            <div class="alert alert-danger p-3 rounded mb-4">
+                <strong class="small d-block mb-1"><i class="fas fa-exclamation-triangle me-1"></i> Please fix the following errors:</strong>
+                <ul class="mb-0 small ps-3">
+                    {% for field, errors in form.errors.items %}
+                        <li><strong>{{ field|capfirst }}:</strong> {{ errors|striptags }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% include "_blog_form_fields.html" %}
+
+        <div class="mt-4 pt-3 border-top d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4 shadow-sm fw-semibold">
+                <i class="fas fa-paper-plane me-1"></i> Publish Post
+            </button>
+            <a href="{% url 'blogs:blogs' %}" class="btn btn-outline-secondary px-3">Cancel</a>
+        </div>
+    </form>
+{% endblock %}

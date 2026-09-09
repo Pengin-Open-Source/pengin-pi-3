@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'macros',
     # Add your apps below here:
     'main',
+    'blogs',
 ]
 
 SITE_ID = 1

@@ -1,0 +1,102 @@
+{# Shared form body for blogs_create.html and edit_blog_post.html. #}
+{# Relies on `form` and (edit only) `object` from the including page's context. #}
+<div class="row g-3 text-start">
+    <div class="col-12">
+        <label for="{{ form.title.id_for_label }}" class="form-label small fw-bold text-secondary mb-1">
+            Article Title <span class="text-danger">*</span>
+        </label>
+        {{ form.title }}
+    </div>
+
+    <div class="col-12">
+        <label for="{{ form.tags.id_for_label }}" class="form-label small fw-bold text-secondary mb-1">
+            Tags / Categories
+        </label>
+        {{ form.tags }}
+        <div class="form-text text-muted small">Comma-separated tags.</div>
+    </div>
+
+    <div class="col-12">
+        <label for="{{ form.content.id_for_label }}" class="form-label small fw-bold text-secondary mb-1">
+            Article Content <span class="text-danger">*</span>
+        </label>
+        {{ form.content }}
+    </div>
+
+    <!-- ATTACHMENT UPLOAD BLOCK -->
+    <div class="col-12 mt-3">
+        <div class="card border bg-light">
+            <div class="card-header bg-white fw-bold text-secondary">
+                <i class="fas fa-paperclip me-1 text-primary"></i> {% if object %}Resource Document / Attachment{% else %}Upload Resource Document / Attachment{% endif %}
+            </div>
+            <div class="card-body row g-3">
+                {% if object and object.file %}
+                    <div class="col-12 mb-2 p-2 border rounded bg-white small">
+                        <span class="fw-bold text-secondary me-2"><i class="fas fa-file-alt text-muted me-1"></i> Current Attachment:</span>
+                        <code>{{ object.file_name|default:object.file }}</code>
+                    </div>
+                {% endif %}
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-secondary mb-1">{% if object %}Upload New / Replace File{% else %}Select File{% endif %}</label>
+                    {{ form.attachment }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-secondary mb-1">Display Title Label</label>
+                    {{ form.file_name }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EVENT INTEGRATION SWITCH & FORM CONTAINER -->
+    <div class="col-12 mt-4">
+        <div class="card border-primary bg-light">
+            <div class="card-body p-3">
+                <div class="form-check form-switch mb-0">
+                    {{ form.is_event }}
+                    <label class="form-check-label fw-bold text-primary ms-2" for="id_is_event">
+                        <i class="fas fa-calendar-alt me-1"></i> Attach Calendar Event to this Blog Post
+                    </label>
+                </div>
+            </div>
+
+            <div id="event-fields-container" class="card-body border-top p-3 d-none bg-white rounded-bottom">
+                <h6 class="fw-bold text-secondary mb-3"><i class="fas fa-clock text-primary me-1"></i> Event Schedule &amp; Location Details</h6>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Event Location / Venue</label>
+                        {{ form.event_location }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Start Date &amp; Time <span class="text-danger">*</span></label>
+                        {{ form.event_start_datetime }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">End Date &amp; Time <span class="text-danger">*</span></label>
+                        {{ form.event_end_datetime }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isEventSwitch = document.getElementById('id_is_event');
+    const eventContainer = document.getElementById('event-fields-container');
+
+    function toggleEventFields() {
+        if (isEventSwitch && isEventSwitch.checked) {
+            eventContainer.classList.remove('d-none');
+        } else if (eventContainer) {
+            eventContainer.classList.add('d-none');
+        }
+    }
+
+    if (isEventSwitch) {
+        toggleEventFields();
+        isEventSwitch.addEventListener('change', toggleEventFields);
+    }
+});
+</script>

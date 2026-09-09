@@ -1,0 +1,52 @@
+{% extends "layouts/centered-card-form.html" %}
+
+{% block top_left %}
+    <a href="{% url 'blogs:blog_post' object.id %}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div>
+        <h1 class="h3 fw-bold text-secondary m-0">Edit Blog Post</h1>
+        <p class="text-muted small mb-0">Modify post details, update categories, revise text content, upload files, or adjust event settings.</p>
+    </div>
+{% endblock %}
+
+{% block middle_article %}
+    <form action="{% url 'blogs:edit_blog_post' object.id %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.errors %}
+            <div class="alert alert-danger p-3 rounded mb-4">
+                <strong class="small d-block mb-1"><i class="fas fa-exclamation-triangle me-1"></i> Please fix the following errors:</strong>
+                <ul class="mb-0 small ps-3">
+                    {% for field, errors in form.errors.items %}
+                        <li><strong>{{ field|capfirst }}:</strong> {{ errors|striptags }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% include "_blog_form_fields.html" %}
+
+        <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4 shadow-sm fw-semibold">
+                    <i class="fas fa-save me-1"></i> Save Edits
+                </button>
+                <a href="{% url 'blogs:blog_post' object.id %}" class="btn btn-outline-secondary px-3">Cancel</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="mt-5 pt-4 border-top text-start">
+        <h3 class="h6 text-danger fw-bold text-uppercase tracking-wider mb-2">
+            <i class="fas fa-exclamation-triangle me-1"></i> Critical Danger Zone
+        </h3>
+        <p class="small text-muted mb-3">Deleting this blog post will permanently archive it in audit logs and remove it (and any attached event) from public feeds.</p>
+        <form method="post" action="{% url 'blogs:delete_blog_post' object.id %}" onsubmit="return confirm('Are you sure you want to delete this blog post? This action cannot be undone.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm px-3 fw-bold">
+                <i class="fas fa-trash me-1"></i> Delete Blog Post
+            </button>
+        </form>
+    </div>
+{% endblock %}
