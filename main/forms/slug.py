@@ -13,6 +13,7 @@ class SlugForm(forms.ModelForm):
             "template_name",
             "render_template",
             "is_dynamic",
+            "requires_recaptcha",
             "json",
         ]
 

@@ -181,11 +181,17 @@ def can_reserve_event(user, event):
 def get_available_slots(event, occurrence_date):
     """Splits the event's start/end time-of-day, applied to occurrence_date,
     into slot_duration_minutes chunks. Each dict has start/end (aware
-    datetimes) and reserved (bool, whether that slot is already booked for
-    this occurrence_date)."""
+    datetimes), 'past' (bool, whether the slot's start time has already
+    elapsed - true for e.g. this morning's slots on today's occurrence),
+    and 'reserved' (bool, true if either already booked OR already past -
+    both make a slot non-bookable, so every existing caller that only
+    checks 'reserved' to decide bookability is covered for free; 'past'
+    is broken out separately for callers that want to explain *why* a
+    slot isn't offered, e.g. showing "expired" instead of "booked")."""
     duration = timedelta(minutes=event.slot_duration_minutes)
     window_start = datetime.combine(occurrence_date, event.start_datetime.timetz())
     window_end = datetime.combine(occurrence_date, event.end_datetime.timetz())
+    now = timezone.now()
 
     reserved_starts = set(
         event.reservations.filter(occurrence_date=occurrence_date).values_list('slot_start', flat=True)
@@ -195,10 +201,13 @@ def get_available_slots(event, occurrence_date):
     slot_start = window_start
     while slot_start + duration <= window_end:
         slot_end = slot_start + duration
+        is_past = slot_start <= now
+        is_booked = slot_start in reserved_starts
         slots.append({
             'start': slot_start,
             'end': slot_end,
-            'reserved': slot_start in reserved_starts,
+            'past': is_past,
+            'reserved': is_booked or is_past,
         })
         slot_start = slot_end
     return slots
