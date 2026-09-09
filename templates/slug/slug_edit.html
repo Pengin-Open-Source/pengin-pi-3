@@ -16,36 +16,155 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 {% endif %}
+{% if content_form.non_field_errors %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {% for error in content_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endif %}
 
-<form method="post" class="needs-validation" novalidate>
+<form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
     {% csrf_token %}
 
+    {# --- Always-visible page envelope: name / SEO fields --- #}
     {% for field in form %}
-        <div class="mb-3">
-            <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-secondary">
-                {{ field.label }}
-                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-            </label>
-
-            {{ field }}
-
-            {% if field.help_text %}
-                <div class="form-text text-muted">{{ field.help_text }}</div>
-            {% endif %}
-
-            {% if field.errors %}
-                <div class="invalid-feedback d-block">
-                    {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
-                </div>
-            {% endif %}
-        </div>
+        {% if field.name in envelope_fields %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-secondary">
+                    {{ field.label }}
+                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}<div class="form-text text-muted">{{ field.help_text }}</div>{% endif %}
+                {% if field.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
     {% endfor %}
 
-    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+    {# --- Smart per-field content editor, generated from the page's own json shape --- #}
+    {% if content_form %}
+        <div class="border-top pt-4 mt-4 mb-2">
+            <h5 class="text-secondary mb-3"><i class="fas fa-magic me-2"></i>Page Content</h5>
+            {% for field in content_form %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-secondary">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<div class="form-text text-muted">{{ field.help_text }}</div>{% endif %}
+                    {% if field.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {% with widget_class=field.field.widget.attrs.class bare_key=field.name|slice:"7:" %}
+                    {% if "content-preview-image" in widget_class or "content-preview-video" in widget_class %}
+                        <div class="mt-2">
+                            <label class="form-text text-muted d-block mb-1">Or upload a new file:</label>
+                            <input type="file" name="{{ "upload__"|add:bare_key }}" id="{{ "id_upload__"|add:bare_key }}"
+                                   class="form-control form-control-sm content-upload-input"
+                                   accept="{% if "content-preview-image" in widget_class %}image/*{% else %}video/*{% endif %}"
+                                   data-preview-for="{{ field.id_for_label }}-preview" data-path-input="{{ field.id_for_label }}">
+                        </div>
+                    {% endif %}
+                    {% if "content-preview-image" in widget_class %}
+                        <img class="content-preview-target mt-2 rounded border" id="{{ field.id_for_label }}-preview"
+                             src="{% if field.value|first == '/' %}{{ field.value }}{% else %}/static/{{ field.value|default:'' }}{% endif %}"
+                             style="max-height: 140px; {% if not field.value %}display:none;{% endif %}"
+                             onerror="this.style.display='none';">
+                    {% elif "content-preview-video" in widget_class %}
+                        <video class="content-preview-target mt-2 rounded border" id="{{ field.id_for_label }}-preview"
+                               src="{% if field.value|first == '/' %}{{ field.value }}{% else %}/static/{{ field.value|default:'' }}{% endif %}"
+                               style="max-height: 140px; {% if not field.value %}display:none;{% endif %}"
+                               muted controls></video>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            {% endfor %}
+            <button type="submit" name="save_mode" value="content" class="btn btn-primary px-4 rounded-3 fw-semibold">
+                <i class="fas fa-save me-1"></i> Save Page Content
+            </button>
+        </div>
+    {% endif %}
+
+    {# --- Advanced: parent/is_dynamic/template wiring + raw json fallback --- #}
+    <div class="border-top pt-3 mt-4">
+        <button class="btn btn-link text-secondary px-0 fw-semibold text-decoration-none" type="button"
+                data-bs-toggle="collapse" data-bs-target="#advancedSettings" aria-expanded="{% if not content_form %}true{% else %}false{% endif %}">
+            <i class="fas fa-cog me-1"></i> Advanced: template, raw JSON, parent, dynamic schema
+        </button>
+        <div class="collapse {% if not content_form %}show{% endif %} mt-3" id="advancedSettings">
+            {% if content_form %}
+                <p class="text-muted small">
+                    Editing here changes the page's underlying structure (which template it uses, or the raw
+                    content JSON directly) - saving from this section re-derives the Page Content form above
+                    from whatever shape the JSON ends up in, next time you open this page.
+                </p>
+            {% endif %}
+            {% for field in form %}
+                {% if field.name not in envelope_fields %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-secondary">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}<div class="form-text text-muted">{{ field.help_text }}</div>{% endif %}
+                        {% if field.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <button type="submit" name="save_mode" value="advanced" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold">
+                <i class="fas fa-save me-1"></i> Save Advanced Settings
+            </button>
+        </div>
+    </div>
+
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4 pt-3 border-top">
         <a href="javascript:history.back()" class="btn btn-outline-secondary px-4 me-md-2 rounded-3">Cancel</a>
-        <button type="submit" class="btn btn-primary px-4 rounded-3 fw-semibold">Save Slug</button>
+        {% if not content_form %}
+            <button type="submit" name="save_mode" value="advanced" class="btn btn-primary px-4 rounded-3 fw-semibold">Save Slug</button>
+        {% endif %}
     </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Path text input -> preview (matches the static-relative-path
+    // convention: seeded/typed values aren't prefixed with /static/
+    // already, uploaded ones are - see the server-side |first == '/'
+    // check this mirrors).
+    document.querySelectorAll('.content-preview-field').forEach(function(input) {
+        var target = document.getElementById(input.id + '-preview');
+        if (!target) return;
+        input.addEventListener('input', function() {
+            if (!input.value) { target.style.display = 'none'; return; }
+            target.src = input.value.charAt(0) === '/' ? input.value : '/static/' + input.value;
+            target.style.display = '';
+        });
+    });
+
+    // Browse-for-file input -> local object-URL preview. The chosen file
+    // itself is what actually gets uploaded on save (serialize_content_form
+    // prioritizes it over the path text field) - the text field is left
+    // alone so its old value stays visible as a fallback if the upload is
+    // cleared before submitting.
+    document.querySelectorAll('.content-upload-input').forEach(function(input) {
+        input.addEventListener('change', function() {
+            var target = document.getElementById(input.dataset.previewFor);
+            if (!target || !input.files || !input.files[0]) return;
+            target.src = URL.createObjectURL(input.files[0]);
+            target.style.display = '';
+        });
+    });
+});
+</script>
 
 {% include "slug/_json_validation.html" %}
 {% endblock %}
