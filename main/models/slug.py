@@ -36,6 +36,19 @@ class Slug(HistoryMixin, models.Model):
     # create/edit child instances of it. See main/views/slug_dynamic.py.
     is_dynamic = models.BooleanField(default=False)
 
+    # A Slug's own content (render_template/json) can embed a raw <form>
+    # that posts back to this same page - SlugView doesn't define a POST
+    # handler yet (nothing needs one today), but its dispatch() already
+    # checks this flag on any POST it does receive and requires a valid
+    # reCAPTCHA token before proceeding, so that capability is safe to add
+    # later without every future form author having to remember to wire
+    # bot protection in themselves - see main.views.slug.SlugView.dispatch.
+    requires_recaptcha = models.BooleanField(
+        default=False,
+        help_text="If this page's content embeds a form that posts back to it, "
+                   "require a valid reCAPTCHA token on that POST."
+    )
+
     # Generic Foreign Key linkage to bind ANY model instance dynamically
     content_type = models.ForeignKey(
         ContentType, 

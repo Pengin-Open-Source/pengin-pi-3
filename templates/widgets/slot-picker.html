@@ -5,16 +5,25 @@
 {# #}
 {# Usage: {% include "widgets/slot-picker.html" %}. Context vars, all        #}
 {# optional (falls back to a small hardcoded example grid if omitted):       #}
-{# `slots` (list of {label, value, available: bool}), `form_action`. #}
+{# `slots` (list of {label, value, available: bool}), `form_action`,         #}
+{# `recaptcha_site_key` (if set, each slot button's own one-click form gets  #}
+{# a fresh reCAPTCHA v3 token generated just before it submits - see the     #}
+{# script at the bottom of this file. Every slot is its own tiny <form>      #}
+{# rather than one form + a selection, so this can't reuse                   #}
+{# components/recaptcha_script.html's single-form-id macro as-is; it wires   #}
+{# every .recaptcha-slot-form on the page instead of just one). #}
 
 <div class="row g-2">
     {% if slots %}
         {% for slot in slots %}
             <div class="col-6 col-md-3">
                 {% if slot.available %}
-                    <form method="post" action="{{ form_action|default:'.' }}">
+                    <form method="post" action="{{ form_action|default:'.' }}" class="recaptcha-slot-form">
                         {% csrf_token %}
                         <input type="hidden" name="slot" value="{{ slot.value }}">
+                        {% if recaptcha_site_key %}
+                            <input type="hidden" name="g-recaptcha-response" class="recaptcha-token-input">
+                        {% endif %}
                         <button type="submit" class="btn btn-outline-primary w-100">{{ slot.label }}</button>
                     </form>
                 {% else %}
@@ -45,3 +54,34 @@
         </div>
     {% endif %}
 </div>
+
+{% if recaptcha_site_key %}
+<script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var siteKey = "{{ recaptcha_site_key }}";
+    document.querySelectorAll('.recaptcha-slot-form').forEach(function(form) {
+        var tokenInput = form.querySelector('.recaptcha-token-input');
+        if (!tokenInput) return;
+
+        form.addEventListener('submit', function(e) {
+            if (tokenInput.value) return true;
+            e.preventDefault();
+
+            if (typeof grecaptcha === "undefined") {
+                form.submit();
+                return;
+            }
+            grecaptcha.ready(function() {
+                grecaptcha.execute(siteKey, { action: 'reserve_slot' }).then(function(token) {
+                    tokenInput.value = token;
+                    form.submit();
+                }).catch(function() {
+                    form.submit();
+                });
+            });
+        });
+    });
+});
+</script>
+{% endif %}
