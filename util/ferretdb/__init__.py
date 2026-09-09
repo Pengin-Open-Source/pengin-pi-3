@@ -3,7 +3,12 @@ from django.conf import settings
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
-#TODO: Deprecate?  Investigate if we are even using it.
+# Live and in use: util.slug_dynamic_data (Slug's is_dynamic feature)
+# stores its data here. FerretDB itself needs to be running a Postgres
+# build with the DocumentDB extension - see docker-compose.yml's postgres
+# service and .env.example's FERRETDB_DB - a plain postgres:15/16/17-alpine
+# will not work (confirmed: every operation fails with "schema
+# documentdb_api does not exist" against one).
 
 class MongoDBClient:
     _client = None
