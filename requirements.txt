@@ -19,5 +19,6 @@ pillow
 botocore
 python-decouple
 pymongo
+jsonschema
 psycopg2-binary
 uwsgi

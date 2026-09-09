@@ -1,10 +1,12 @@
 import uuid
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
 from .mixins import HistoryMixin, AbstractHistory
+from util.json_schema import validate_schema_document, InvalidSchemaError
 
 
 class Slug(HistoryMixin, models.Model):
@@ -27,6 +29,12 @@ class Slug(HistoryMixin, models.Model):
     
     # Updated to native JSONField for flexible data/schema storage
     json = models.JSONField(default=dict, blank=True)
+
+    # When set, this Slug is a "content type" definition rather than (or in
+    # addition to) a normal page: `json` must hold a JSON Schema describing
+    # a dynamic form, and slug/<parent_id>/create|edit render that form to
+    # create/edit child instances of it. See main/views/slug_dynamic.py.
+    is_dynamic = models.BooleanField(default=False)
 
     # Generic Foreign Key linkage to bind ANY model instance dynamically
     content_type = models.ForeignKey(
@@ -55,8 +63,25 @@ class Slug(HistoryMixin, models.Model):
     def __str__(self):
         return self.name
 
+    def clean(self):
+        super().clean()
+        if self.is_dynamic:
+            if not self.parent_id:
+                raise ValidationError({'parent': "A dynamic slug must have a parent."})
+            if not self.json:
+                raise ValidationError({
+                    'json': "A dynamic slug requires a JSON Schema describing its form fields."})
+            try:
+                validate_schema_document(self.json)
+            except InvalidSchemaError as e:
+                raise ValidationError({'json': f"Not a valid JSON Schema: {e}"})
+
     def save(self, *args, **kwargs):
         self.name = self.name.lower()
+        # Enforced here too (not just in SlugForm) so is_dynamic's
+        # invariants hold no matter how a Slug gets saved - the admin,
+        # a script, a data migration, not just the staff create/edit form.
+        self.clean()
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
