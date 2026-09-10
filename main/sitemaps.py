@@ -71,17 +71,29 @@ def collect_static_routes(urlpatterns, prefix=''):
 
 def _requires_login(callback):
     """
-    True if a resolved view's class-based view requires an authenticated
-    user (LoginRequiredMixin anywhere in its MRO) - lets the sitemap
-    generically skip any app's login-gated create/edit/"my stuff" pages
-    without every app having to be named one-by-one in ignored_names below.
-    Function-based views aren't introspectable this way and fall through
-    to ignored_names instead.
+    True if a resolved view requires an authenticated user - lets the
+    sitemap generically skip any app's login-gated create/edit/"my stuff"
+    pages without every app having to be named one-by-one in ignored_names
+    below. Two independent gating styles are detected:
+      - A class-based view with LoginRequiredMixin anywhere in its MRO.
+      - A view (function-based, or a CBV decorated via
+        @method_decorator(is_admin_required, name='dispatch') /
+        @is_admin_required directly) wrapped by one of main.auth.decorators'
+        real access-gating decorators (group_required, is_admin_required),
+        which mark their wrapped function with `.requires_auth = True` for
+        exactly this reason - see main/auth/decorators.py. is_admin_provider
+        and user_group_provider are NOT gates (they just pass extra
+        context, never block), so they're deliberately not marked and
+        won't trip this check.
     """
     view_class = getattr(callback, 'view_class', None)
-    if view_class is None:
-        return False
-    return issubclass(view_class, LoginRequiredMixin)
+    if view_class is not None and issubclass(view_class, LoginRequiredMixin):
+        return True
+    if getattr(callback, 'requires_auth', False):
+        return True
+    if view_class is not None and getattr(view_class.dispatch, 'requires_auth', False):
+        return True
+    return False
 
 
 class StaticAppSitemap(Sitemap):
