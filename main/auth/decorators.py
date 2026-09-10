@@ -23,6 +23,11 @@ def group_required(group_name):
                 return view_func(request, *args, **kwargs)
             else:
                 return HttpResponseForbidden("<h1> You don't have permission to access this page. </h1>")
+        # Marker main.sitemaps._requires_login() checks for - covers both a
+        # plain function view decorated directly and a CBV decorated via
+        # @method_decorator(group_required(...), name='dispatch'), neither
+        # of which LoginRequiredMixin-MRO introspection alone can see.
+        wrapped_view.requires_auth = True
         return wrapped_view
     return decorator
 
@@ -62,6 +67,9 @@ def is_admin_required(view_func):
         else:
             # This is a fallback, but the checks above should handle all cases.
             return HttpResponseForbidden("<h1>You must be a validated admin to access this page.</h1>")
+    # Marker main.sitemaps._requires_login() checks for - see group_required
+    # above for why this can't just rely on LoginRequiredMixin-MRO checks.
+    _wrapped_view.requires_auth = True
     return _wrapped_view
 
 
