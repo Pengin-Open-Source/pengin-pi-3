@@ -4,11 +4,11 @@ This document provides an overview of the directory structure for the Pengin Pi 
 
 ## High-Level Overview
 
-**This project does not use separate Django apps for features.** Everything lives inside the single `main` app (organized into submodules/subpackages), except generic, non-Django, non-auth infrastructure, which lives in `util/`, and `analytics/` - a small, documented exception explained below. This is a deliberate departure from the "one app per feature" Django convention: it keeps permissions, models, and views for the whole project consolidated in one place instead of scattered and duplicated across many small apps.
+**This project does not use separate Django apps for features.** Everything lives inside the single `main` app (organized into submodules/subpackages), except generic, non-Django, non-auth infrastructure, which lives in `util/`. This is a deliberate departure from the "one app per feature" Django convention: it keeps permissions, models, and views for the whole project consolidated in one place instead of scattered and duplicated across many small apps.
 
 ```
 pengin-pi-3/
-├── main/               # The entire project - the primary entry in INSTALLED_APPS besides framework/third-party
+├── main/               # The entire project - the only entry in INSTALLED_APPS besides framework/third-party
 │   ├── auth/            # Central RBAC framework - see below
 │   ├── models/           # All models (User, Slug, Address, ...) - one app_label, one migrations/ dir
 │   ├── views/             # All views
@@ -17,7 +17,6 @@ pengin-pi-3/
 │   ├── migrations/            # The one migrations directory for the whole project
 │   ├── settings.py, urls.py, wsgi.py, asgi.py
 │   └── admin.py
-├── analytics/          # Page-view logging - a documented exception, see below
 ├── static/             # Project-wide static files (CSS, JS, images) - add your own
 ├── templates/          # Project-wide Django templates
 ├── util/               # Shared, generic infrastructure - NOT for auth/permissions/user logic (see main/auth/)
@@ -54,6 +53,3 @@ Django templates shared across the project - the base layout, nav/footer compone
 
 ### `util/`
 Generic, non-Django infrastructure with no auth/permissions/user-framework logic in it (that all belongs in `main/auth/` - see above). Examples: email sending, file storage (S3/local), rate limiting, reCAPTCHA, pagination.
-
-### `analytics/`
-A deliberate, documented exception to "everything lives in `main`": it's a real Django app (not a `main` submodule) because it owns its own model and migration (`PageViewLog`) - something `util/` is explicitly not for. `util/middleware/analytics.py`'s `PageViewLoggerMiddleware` pushes each page view to a Redis list (`pending_page_views`) rather than writing to Postgres directly, so a request never blocks on a database write for logging; `analytics/management/commands/flush_redis_views.py` drains that list into `PageViewLog` in bulk (run on a schedule, e.g. every 5 minutes via cron) and `purge_page_views.py` deletes rows older than `--days` (default 30, also run on a schedule). `analytics/admin.py` renders a top-pages/daily-traffic chart on the Django admin change list.
