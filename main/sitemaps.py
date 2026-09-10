@@ -1,5 +1,6 @@
 import fnmatch
 from django.apps import apps
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse, get_resolver, URLPattern, URLResolver
 from main.models import Slug, RobotsRule
@@ -64,8 +65,23 @@ def collect_static_routes(urlpatterns, prefix=''):
         elif isinstance(pattern, URLPattern) and pattern.name:
             if '<' in str(pattern.pattern):
                 continue
-            routes.append(f"{prefix}{pattern.name}")
+            routes.append((f"{prefix}{pattern.name}", pattern.callback))
     return routes
+
+
+def _requires_login(callback):
+    """
+    True if a resolved view's class-based view requires an authenticated
+    user (LoginRequiredMixin anywhere in its MRO) - lets the sitemap
+    generically skip any app's login-gated create/edit/"my stuff" pages
+    without every app having to be named one-by-one in ignored_names below.
+    Function-based views aren't introspectable this way and fall through
+    to ignored_names instead.
+    """
+    view_class = getattr(callback, 'view_class', None)
+    if view_class is None:
+        return False
+    return issubclass(view_class, LoginRequiredMixin)
 
 
 class StaticAppSitemap(Sitemap):
@@ -86,9 +102,11 @@ class StaticAppSitemap(Sitemap):
         }
 
         valid_routes, seen_paths = [], set()
-        for route_name in all_routes:
+        for route_name, callback in all_routes:
             base_name = route_name.split(':')[-1]
             if base_name in ignored_names or route_name in ignored_names:
+                continue
+            if _requires_login(callback):
                 continue
             try:
                 path = reverse(route_name)
