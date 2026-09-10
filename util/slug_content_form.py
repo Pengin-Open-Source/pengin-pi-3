@@ -47,6 +47,117 @@ _STRING_LITERAL_RE = re.compile(r"""(['"]).*?\1""")
 _IDENTIFIER_RE = re.compile(r'[a-zA-Z_][a-zA-Z0-9_.]*')
 _FOR_RE = re.compile(r'^for\s+(.+?)\s+in\s+([a-zA-Z_][a-zA-Z0-9_.]*)')
 
+# --- DOM-path naming (fields are labeled by where they actually render,
+# e.g. "html.body.div.main.section.div.h1", not by their often-opaque
+# json key) ---
+#
+# The json keys a Slug's content dict happens to use (hero_title,
+# cta_link, block_3_html, ...) come from whoever wrote the template and
+# aren't always self-explanatory to someone editing the page who's never
+# read that template - unlike a form field bound to an app model
+# (Job.title, Ticket.summary, ...), which already has a real name. So for
+# this JSON-content editor specifically, the field's on-screen label is
+# its structural render path when one can be found - see _field_label()
+# below - with the original key kept alongside in parentheses since it's
+# still what's stored in json and shown in the raw "Advanced" editor.
+#
+# Not a real HTML/XML parser - Django templates mix {% %} control flow
+# into the markup in ways no standard parser handles, so this is a
+# linear, best-effort scanner: walk the source once in document order,
+# maintain a stack of currently-open tag names, and whenever a
+# {{ key }} is seen, record the CURRENT root+stack (joined with ".") as
+# that key's structural path. "root" is the layout chrome above whatever
+# the child template actually defines: layout.html (this project's one
+# base template) wraps every named block in a fixed, known nesting -
+# pageHeader sits in <html><body><div><header>, pageContent in
+# <html><body><div><main>, contact in <html><body><footer> - so root is
+# seeded from _BLOCK_ROOTS the moment a `{% block <name> %}` matching one
+# of those is seen, and the tag stack resets at each new block (nothing
+# from one named block should leak into another's path). A {{ key }}
+# inside an attribute value (<a href="{{ url }}">, <img src="{{ image }}">)
+# gets the attribute name appended as the final segment (".../a.href",
+# ".../img.src") rather than being treated as element content, since
+# that's the more useful "where" for an editor to see. Best-effort only:
+# unclosed/mismatched tags in a hand-written render_template just make
+# the stack somewhat imprecise, never an error - this is a labeling aid,
+# not validation. Known gap: a key referenced only via a {% tag %}
+# argument (e.g. {% static hero_image %}) gets no path here, since it's
+# not a {{ }} output or an attribute value - such a field just falls back
+# to its humanized key name, same as before this feature existed.
+_VOID_TAGS = {
+    'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+    'link', 'meta', 'param', 'source', 'track', 'wbr',
+}
+# Mirrors templates/layout.html's fixed block nesting. If that file's
+# structure ever changes, update this alongside it - there's no way to
+# derive it automatically since layout.html itself isn't scanned (only
+# the child template that {% extends %} it is).
+_BLOCK_ROOTS = {
+    'pageheader': ['html', 'body', 'div', 'header'],
+    'pagecontent': ['html', 'body', 'div', 'main'],
+    'contact': ['html', 'body', 'footer'],
+    'staff_toolbar': ['html', 'body', 'div'],
+}
+_SCAN_RE = re.compile(
+    r'\{%\s*block\s+(?P<block>\w+)'
+    r'|</(?P<close>[a-zA-Z][a-zA-Z0-9]*)\s*>'
+    r'|<(?P<open>[a-zA-Z][a-zA-Z0-9]*)(?P<attrs>(?:"[^"]*"|\'[^\']*\'|[^<>])*)>'
+    r'|\{\{\s*(?P<var>[a-zA-Z_][a-zA-Z0-9_.]*)'
+)
+_ATTR_VALUE_RE = re.compile(
+    r'''([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*(?:"([^"]*)"|'([^']*)')'''
+)
+_VAR_IN_VALUE_RE = re.compile(r'\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)')
+
+
+def _compute_dom_paths(source):
+    """Returns {top_level_key: 'html.body.div.main.section...'} for every
+    {{ key }} (or {{ key.attr }}, keyed under just `key`) found in
+    `source` - see the design note above. First path found for a given
+    key wins if it's referenced more than once."""
+    paths = {}
+    stack = []
+    root = []
+
+    for m in _SCAN_RE.finditer(source):
+        if m.group('block'):
+            root = _BLOCK_ROOTS.get(m.group('block').lower(), [])
+            stack = []
+            continue
+
+        if m.group('close'):
+            name = m.group('close').lower()
+            if name in stack:
+                while stack and stack[-1] != name:
+                    stack.pop()
+                if stack:
+                    stack.pop()
+            continue
+
+        if m.group('open'):
+            tag = m.group('open').lower()
+            attrs = m.group('attrs') or ''
+
+            for attr_match in _ATTR_VALUE_RE.finditer(attrs):
+                attr_name = attr_match.group(1)
+                attr_value = attr_match.group(2) if attr_match.group(2) is not None else attr_match.group(3)
+                var_match = _VAR_IN_VALUE_RE.search(attr_value or '')
+                if var_match:
+                    key = var_match.group(1).split('.')[0]
+                    paths.setdefault(key, '.'.join(root + stack + [tag, attr_name]))
+
+            is_self_closing = attrs.rstrip().endswith('/') or tag in _VOID_TAGS
+            if not is_self_closing:
+                stack.append(tag)
+            continue
+
+        if m.group('var'):
+            key = m.group('var').split('.')[0]
+            full_path = root + stack
+            paths.setdefault(key, '.'.join(full_path) if full_path else '(page)')
+
+    return paths
+
 # Template tag/filter/keyword vocabulary, and context variables the
 # surrounding view/layout machinery always provides (SlugView, layout.html,
 # nav_bar.html's own context processors) - never candidates for a content
@@ -67,6 +178,22 @@ _DENYLIST = {
 
 def _label(key):
     return key.replace('_', ' ').replace('html', '').strip().title() or key
+
+
+def _field_label(key, dom_paths):
+    """The field's on-screen name. Leads with the structural render path
+    (e.g. "html.body.div.main.section.div.h1") when one was found for
+    this key, since that's a much more reliable "which element is this"
+    signal than the json key itself - see the design note above
+    _BLOCK_ROOTS. The humanized key name is kept in parentheses either
+    way, since it's still what's shown in the raw/Advanced json editor
+    and is searchable even for editors who don't know HTML structure.
+    Falls back to just the humanized name when no path was found (e.g.
+    the key is only referenced via a {% tag %} argument, or isn't
+    referenced in the template at all yet)."""
+    path = dom_paths.get(key)
+    humanized = _label(key)
+    return f"{path} ({humanized})" if path else humanized
 
 
 def _looks_like_image(key, value):
@@ -206,6 +333,9 @@ def build_json_content_form(data, template_name='', render_template='', data_pos
     if not data and not missing_keys:
         return None
 
+    source = _read_template_source(template_name) + '\n' + (render_template or '')
+    dom_paths = _compute_dom_paths(source)
+
     field_kinds = {}
     fields = {}
 
@@ -213,7 +343,7 @@ def build_json_content_form(data, template_name='', render_template='', data_pos
         kind = _field_kind(key, value)
         field_kinds[key] = kind
         field_name = FIELD_PREFIX + key
-        label = _label(key)
+        label = _field_label(key, dom_paths)
 
         if kind == 'bool':
             fields[field_name] = forms.BooleanField(
@@ -257,7 +387,8 @@ def build_json_content_form(data, template_name='', render_template='', data_pos
         # widget automatically once it exists in json.
         field_kinds[key] = 'text'
         fields[FIELD_PREFIX + key] = forms.CharField(
-            required=False, initial='', label=f"{_label(key)} (new - used by template, not yet set)",
+            required=False, initial='',
+            label=f"{_field_label(key, dom_paths)} (new - used by template, not yet set)",
             widget=forms.TextInput(attrs={'class': 'form-control border-warning'}))
 
     fields['field_kinds'] = field_kinds
