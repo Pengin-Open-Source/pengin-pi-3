@@ -1,10 +1,51 @@
 import fnmatch
 from django.apps import apps
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.sitemaps import Sitemap
-from django.urls import reverse, get_resolver, URLPattern, URLResolver
+from django.test import RequestFactory
+from django.urls import reverse, get_resolver, resolve, Resolver404, URLPattern, URLResolver
 from main.models import Slug, RobotsRule
 from main.models.mixins import SitemapEntry
+
+_PROBE_FACTORY = RequestFactory()
+
+
+def _returns_redirect(path):
+    """True if a bare, anonymous GET to `path` resolves to a view that
+    returns a 3xx - Google Search Console flags any sitemap URL that
+    redirects instead of resolving directly ("Sitemap contains a
+    redirect"), so a URL like this shouldn't be advertised even though
+    it resolves to a real view and isn't login-gated. This is generic by
+    design (probes the actual response instead of requiring every
+    redirecting view to be named/marked one-by-one) because a redirect
+    can come from anywhere - an unnamed `path('', lambda request:
+    redirect(...))` alias (invisible to both the ignored_names set and
+    _requires_login, since it's neither named nor gated) or a view
+    class whose dispatch() redirects unauthenticated/unqualified users
+    elsewhere entirely (also invisible to _requires_login's mixin/marker
+    checks, since that's arbitrary imperative logic, not a mixin or a
+    decorator).
+
+    Best-effort probe, not a full request: no session/messages
+    middleware is attached (a bare RequestFactory request doesn't get
+    them), so a view that touches request.session/request._messages
+    before it would otherwise redirect raises instead - caught and
+    treated as "not a redirect" (fails open) rather than risking a
+    false positive that hides a page that's actually fine. A wrongly
+    included redirect is a minor sitemap warning; a wrongly excluded
+    real page is a bigger loss."""
+    try:
+        match = resolve(path)
+    except Resolver404:
+        return False
+    try:
+        request = _PROBE_FACTORY.get(path)
+        request.user = AnonymousUser()
+        response = match.func(request, *match.args, **match.kwargs)
+        return 300 <= getattr(response, 'status_code', 200) < 400
+    except Exception:
+        return False
 
 
 def _get_robots_rules():
@@ -126,6 +167,8 @@ class StaticAppSitemap(Sitemap):
                 continue
             if is_disallowed(path, rules=rules) or path in seen_paths:
                 continue
+            if _returns_redirect(path):
+                continue
             valid_routes.append(route_name)
             seen_paths.add(path)
         return valid_routes
@@ -147,7 +190,7 @@ class SlugDatabaseSitemap(Sitemap):
                 url = slug.get_absolute_url()
             except Exception:
                 continue
-            if url and not is_disallowed(url, rules=rules):
+            if url and not is_disallowed(url, rules=rules) and not _returns_redirect(url):
                 allowed.append(slug)
         return allowed
 
@@ -179,7 +222,7 @@ class DynamicAppSitemap(Sitemap):
                     url = obj.get_absolute_url()
                 except Exception:
                     continue
-                if url and not is_disallowed(url, rules=rules):
+                if url and not is_disallowed(url, rules=rules) and not _returns_redirect(url):
                     items.append(obj)
         return items
 
