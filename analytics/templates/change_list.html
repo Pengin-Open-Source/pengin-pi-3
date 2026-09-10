@@ -1,0 +1,58 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 25px;">
+  <div style="flex: 1; min-width: 320px; background: #ffffff; padding: 18px; border-radius: 8px; border: 1px solid #ccc; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <h3 style="margin-top:0; color: #333;">Top 10 Most Viewed Pages (30 Days)</h3>
+    <canvas id="topViewsChart" height="160"></canvas>
+  </div>
+  
+  <div style="flex: 1; min-width: 320px; background: #ffffff; padding: 18px; border-radius: 8px; border: 1px solid #ccc; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <h3 style="margin-top:0; color: #333;">Daily View Volume Trend</h3>
+    <canvas id="trafficTrendChart" height="160"></canvas>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Bar Chart - Top Views
+  new Chart(document.getElementById('topViewsChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ top_labels|safe }},
+      datasets: [{
+        label: 'Total Views',
+        data: {{ top_counts|safe }},
+        backgroundColor: '#417690'
+      }]
+    },
+    options: {
+      responsive: true,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  // Line Chart - Traffic Trend
+  new Chart(document.getElementById('trafficTrendChart'), {
+    type: 'line',
+    data: {
+      labels: {{ trend_labels|safe }},
+      datasets: [{
+        label: 'Daily Views',
+        data: {{ trend_counts|safe }},
+        borderColor: '#79AEC8',
+        backgroundColor: 'rgba(121, 174, 200, 0.2)',
+        fill: true,
+        tension: 0.2
+      }]
+    },
+    options: { responsive: true }
+  });
+});
+</script>
+
+{{ block.super }}
+{% endblock %}
