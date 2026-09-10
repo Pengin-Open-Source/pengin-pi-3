@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     # Add your apps below here:
     'main',
     'events',
-    'analytics',
 ]
 
 SITE_ID = 1
