@@ -13,8 +13,8 @@ from django.urls import reverse
 
 from main.models.users import User
 from main.forms.auth import (
-    LoginForm, SignUpForm, PasswordResetForm, 
-    SetPasswordForm, EditPasswordForm
+    LoginForm, SignUpForm, PasswordResetForm,
+    SetPasswordForm, EditPasswordForm, ActivateAccountForm
 )
 from util.security.ratelimit import RateLimitedPostMixin, RateLimitedGetMixin
 from util.security.recaptcha import RecaptchaRequiredMixin
@@ -54,6 +54,64 @@ class ValidateView(View):
 
         messages.success(request, "Your account has been successfully validated!")
         return redirect('profile')
+
+
+class ActivateAccountView(RateLimitedPostMixin, RateLimitedGetMixin, RecaptchaRequiredMixin, View):
+    """Staff-created accounts (main.views.staff.StaffUserCreateView) have no
+    password yet, so they can't log in to use the normal ValidateView flow.
+    Instead they get a one-time password by email and use it here to set
+    their own password and validate their account in one step."""
+    ratelimit_rate = '5/h'
+
+    def get(self, request, token):
+        target_user = User.objects.filter(validation_id=token, validated=False).first()
+
+        if not target_user or not target_user.otp_code:
+            messages.error(request, "This activation link is invalid or has already been used.")
+            return redirect('login')
+
+        form = ActivateAccountForm()
+        return render(request, 'authentication/activate_account.html', {
+            'form': form, 'token': token, 'email': target_user.email,
+            'site_key': os.getenv("RECAPTCHA_SITE_KEY"), 'primary_title': 'Activate Account',
+        })
+
+    def post(self, request, token):
+        target_user = User.objects.filter(validation_id=token, validated=False).first()
+        form = ActivateAccountForm(request.POST)
+
+        if not target_user or not target_user.otp_code:
+            messages.error(request, "This activation link is invalid or has already been used.")
+            return redirect('login')
+
+        if form.is_valid():
+            otp = form.cleaned_data['otp'].strip().upper()
+            new_password = form.cleaned_data['new_password']
+            confirm_new_password = form.cleaned_data['confirm_new_password']
+
+            if target_user.otp_expires_at and timezone.now() > target_user.otp_expires_at:
+                messages.error(request, "This one-time password has expired. Ask staff to resend it.")
+            elif otp != target_user.otp_code:
+                messages.error(request, "Incorrect one-time password.")
+            elif new_password != confirm_new_password:
+                messages.error(request, "Passwords do not match.")
+            else:
+                target_user.save_history(user=target_user)
+                target_user.set_password(new_password)
+                target_user.validated = True
+                target_user.validation_id = uuid.uuid4()
+                target_user.otp_code = None
+                target_user.otp_expires_at = None
+                target_user.save()
+
+                login(request, target_user, backend='django.contrib.auth.backends.ModelBackend')
+                messages.success(request, "Your account is activated! Welcome.")
+                return redirect('profile')
+
+        return render(request, 'authentication/activate_account.html', {
+            'form': form, 'token': token, 'email': target_user.email,
+            'site_key': os.getenv("RECAPTCHA_SITE_KEY"), 'primary_title': 'Activate Account',
+        })
 
 
 class SendEmailView(LoginRequiredMixin, View):

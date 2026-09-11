@@ -32,6 +32,17 @@ class SetPasswordForm(forms.Form):
     new_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
     confirm_new_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
 
+class ActivateAccountForm(forms.Form):
+    otp = forms.CharField(
+        label="One-Time Password",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 'placeholder': 'One-time password from your email',
+            'autocomplete': 'one-time-code',
+        })
+    )
+    new_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    confirm_new_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
 class EditPasswordForm(forms.Form):
     curr_password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Current Password'}),
