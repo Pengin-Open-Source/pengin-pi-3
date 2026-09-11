@@ -1,0 +1,37 @@
+{% extends "layouts/centered-card-form.html" %}
+
+{% block top_left %}
+<a href="{% url 'staff_user_list' %}" class="btn btn-outline-secondary btn-sm me-3">
+    <i class="fas fa-arrow-left"></i>
+</a>
+<h1 class="h3 fw-bold text-secondary m-0">Edit User: {{ sys_user.email }}</h1>
+{% endblock %}
+
+{% block middle_article %}
+{% include "staff/_user_form_fields.html" %}
+
+<hr class="my-4">
+<h2 class="h6 fw-bold text-secondary mb-3">Account Actions</h2>
+<div class="d-flex flex-wrap gap-2">
+    <form method="POST" action="{% url 'staff_user_send_validation' pk=sys_user.id %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-secondary btn-sm" type="submit"{% if sys_user.validated %} disabled{% endif %}>
+            <i class="fas fa-envelope me-1"></i> Send Activation Email
+        </button>
+    </form>
+    <form method="POST" action="{% url 'staff_user_send_reset' pk=sys_user.id %}">
+        {% csrf_token %}
+        <button class="btn btn-outline-secondary btn-sm" type="submit">
+            <i class="fas fa-key me-1"></i> Send Password Reset
+        </button>
+    </form>
+    {% if sys_user != request.user %}
+        <form method="POST" action="{% url 'staff_user_delete' pk=sys_user.id %}" onsubmit="return confirm('Delete {{ sys_user.email }}? This cannot be undone.');">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm" type="submit">
+                <i class="fas fa-trash me-1"></i> Delete User
+            </button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

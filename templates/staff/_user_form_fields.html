@@ -1,0 +1,86 @@
+{# templates/staff/_user_form_fields.html #}
+{# Shared by user_create.html/user_edit.html: the StaffUserForm fields plus #}
+{# the TeamRoleAssignmentFormSet, rendered via widgets/dynamic-formset.html #}
+{# with a team->role cascading-dropdown script layered on top (the classes #}
+{# it targets - .team-select/.role-select - live on the widgets themselves, #}
+{# set in main/auth/forms.py's TeamRoleAssignmentForm, so they survive the #}
+{# shared widget's generic per-field rendering). #}
+<form method="POST">
+    {% csrf_token %}
+    {% for field in form %}
+        <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary mb-1">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors }}</div>{% endif %}
+        </div>
+    {% endfor %}
+
+    <hr class="my-4">
+    <h2 class="h6 fw-bold text-secondary mb-3">Team Roles</h2>
+
+    {% include "widgets/dynamic-formset.html" with formset=role_formset prefix=role_formset.prefix row_template_id="empty-role-row" %}
+
+    <template id="empty-role-row">
+        <div class="formset-row p-3 bg-light border rounded position-relative">
+            <div class="d-none">{{ role_formset.empty_form.id }}{{ role_formset.empty_form.DELETE }}</div>
+            <div class="row g-3 align-items-center">
+                <div class="col-md">
+                    <label class="small fw-bold mb-1">Team</label>
+                    {{ role_formset.empty_form.team }}
+                </div>
+                <div class="col-md">
+                    <label class="small fw-bold mb-1">Role</label>
+                    {{ role_formset.empty_form.role }}
+                </div>
+                <div class="col-md-auto text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-formset-row">
+                        <i class="fas fa-trash me-1"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <button class="btn btn-primary px-4 shadow-sm fw-semibold mt-4" type="submit">
+        <i class="fas fa-save me-1"></i> Save
+    </button>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var container = document.getElementById('dynamicFormsetContainer');
+    if (!container) return;
+
+    function wireTeamSelect(teamSelect) {
+        if (teamSelect.dataset.wired) return;
+        teamSelect.dataset.wired = '1';
+        teamSelect.addEventListener('change', function () {
+            var row = teamSelect.closest('.formset-row');
+            var roleSelect = row.querySelector('.role-select');
+            var teamId = teamSelect.value;
+
+            roleSelect.innerHTML = '<option value="">-- Select Role --</option>';
+            if (!teamId) return;
+
+            fetch('/staff/api/team-roles/' + teamId + '/')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    data.roles.forEach(function (role) {
+                        var opt = document.createElement('option');
+                        opt.value = role.id;
+                        opt.textContent = role.name;
+                        roleSelect.appendChild(opt);
+                    });
+                });
+        });
+    }
+
+    container.querySelectorAll('.team-select').forEach(wireTeamSelect);
+
+    var observer = new MutationObserver(function () {
+        container.querySelectorAll('.team-select').forEach(wireTeamSelect);
+    });
+    observer.observe(container, { childList: true });
+});
+</script>
