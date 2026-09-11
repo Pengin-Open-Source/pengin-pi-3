@@ -154,9 +154,12 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
-# Enforce HTTPS-only session and CSRF cookies
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Enforce HTTPS-only session and CSRF cookies - configurable rather than
+# hardcoded so a genuinely TLS-less deployment (e.g. an internal, LAN/VPN
+# -only server with no public-facing cert) can turn this off; every
+# public site keeps the secure-by-default True.
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=True, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
 
 # Security headers
 SECURE_HSTS_SECONDS = 31536000
