@@ -7,7 +7,7 @@ from main.views import (
     PasswordResetRequestView, PasswordResetView,
     SlugCreateView, SlugEditView, SlugDeleteView, SlugView,
     SlugDynamicCreateView, SlugDynamicEditView,
-    ProfileView, SendEmailView, ValidateView, EditPasswordView,
+    ProfileView, SendEmailView, ValidateView, ActivateAccountView, EditPasswordView,
     StaffUserListView, StaffUserCreateView, StaffUserEditView, StaffUserDeleteView,
     StaffUserSendValidationEmailView, StaffUserSendResetPasswordView, StaffTeamRolesApiView,
     robots_txt
@@ -41,6 +41,7 @@ urlpatterns = [
     # Validation routes
     path('profile/send_email/', SendEmailView.as_view(), name='send_validation_email'),
     path('profile/validate/<uuid:token>/', ValidateView.as_view(), name='validate_account'),
+    path('activate/<uuid:token>/', ActivateAccountView.as_view(), name='activate_account'),
 
     # Password Reset routes
     path('generate-prt/', PasswordResetRequestView.as_view(), name='generate_prt'),
