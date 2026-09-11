@@ -67,3 +67,21 @@ class TeamRoleAssignmentForm(forms.ModelForm):
 
 TeamRoleAssignmentFormSet = forms.inlineformset_factory(
     User, TeamUserRole, form=TeamRoleAssignmentForm, fk_name='user', extra=1, can_delete=True)
+
+
+class StaffUserForm(forms.ModelForm):
+    """"Edit a user's admin flags" UI for the core staff console
+    (main/views/staff.py) - promoted here from tools/forms.py alongside
+    TeamRoleAssignmentForm/FormSet, for the same reason: managing system
+    users is core RBAC administration, not something specific to a
+    "tools" app that a site might not install."""
+    class Meta:
+        model = User
+        fields = ['email', 'name', 'validated', 'is_staff', 'is_active']
+        widgets = {
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'validated': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }

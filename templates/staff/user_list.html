@@ -1,0 +1,80 @@
+{% extends "layouts/table-list.html" %}
+{% load macros team_tags %}
+{% loadmacros "macros/pagination.html" %}
+
+{% block top_right %}
+<a href="{% url 'staff_user_create' %}" class="btn btn-primary fw-semibold shadow-sm">
+    <i class="fas fa-user-plus me-1"></i> New User
+</a>
+{% endblock %}
+
+{% block middle_article %}
+<form method="get" class="d-flex align-items-center gap-2 mb-3" style="max-width: 400px;">
+    <div class="input-group">
+        <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+        <input type="text" name="q" value="{{ query }}" class="form-control border-start-0 ps-0" placeholder="Search users...">
+        <button type="submit" class="btn btn-primary fw-bold">Search</button>
+    </div>
+</form>
+
+<div class="table-responsive rounded border mb-3">
+    <table class="table table-hover align-middle mb-0 text-start">
+        <thead class="table-dark text-uppercase small">
+            <tr>
+                <th scope="col" class="py-3 px-3">
+                    <a href="?sort={% if sort_by == 'name' %}-name{% else %}name{% endif %}" class="text-white text-decoration-none">
+                        Name <i class="fas fa-sort{% if sort_by == 'name' %}-up{% elif sort_by == '-name' %}-down{% endif %} ms-1"></i>
+                    </a>
+                </th>
+                <th scope="col" class="py-3 px-3">
+                    <a href="?sort={% if sort_by == 'email' %}-email{% else %}email{% endif %}" class="text-white text-decoration-none">
+                        Email <i class="fas fa-sort{% if sort_by == 'email' %}-up{% elif sort_by == '-email' %}-down{% endif %} ms-1"></i>
+                    </a>
+                </th>
+                <th scope="col" class="py-3 px-3">Roles</th>
+                <th scope="col" class="py-3 px-3">Status</th>
+                <th scope="col" class="py-3 px-3 text-end">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sys_user in page_obj %}
+                <tr class="{% cycle 'bg-white' 'bg-light' %}">
+                    <td class="py-3 px-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-secondary text-white fw-bold" style="width: 2rem; height: 2rem; font-size: 0.85rem;">
+                                {{ sys_user.name|default:sys_user.email|first|upper }}
+                            </span>
+                            <div>
+                                <div class="fw-semibold text-secondary">{{ sys_user.name|default:"—" }}</div>
+                                <div class="text-muted small">{{ sys_user|team_title }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 text-muted">{{ sys_user.email }}</td>
+                    <td class="py-3 px-3">
+                        {% for assignment in sys_user.team_role_assignments.all %}
+                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle me-1">{{ assignment.role.group.name }} – {{ assignment.role.name }}</span>
+                        {% empty %}
+                            <span class="text-muted small">No roles</span>
+                        {% endfor %}
+                    </td>
+                    <td class="py-3 px-3">
+                        {% if sys_user.is_staff %}<span class="badge bg-primary">Staff</span>{% endif %}
+                        {% if sys_user.validated %}<span class="badge bg-success">Validated</span>{% else %}<span class="badge bg-warning text-dark">Unvalidated</span>{% endif %}
+                        {% if not sys_user.is_active %}<span class="badge bg-danger">Inactive</span>{% endif %}
+                    </td>
+                    <td class="py-3 px-3 text-end">
+                        <a href="{% url 'staff_user_edit' pk=sys_user.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-pen me-1"></i> Edit
+                        </a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="py-4 text-center text-muted">No users found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% use_macro render_pagination page_obj extra_query=pagination_extra_query %}
+{% endblock %}

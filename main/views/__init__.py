@@ -21,6 +21,15 @@ from .slug_dynamic import (
 from .base import SuperTemplateView
 from .profile import ProfileView
 from .seo import robots_txt
+from .staff import (
+    StaffUserListView,
+    StaffUserCreateView,
+    StaffUserSendValidationEmailView,
+    StaffUserEditView,
+    StaffUserSendResetPasswordView,
+    StaffUserDeleteView,
+    StaffTeamRolesApiView,
+)
 from util.mixins import RedisLoggingMixin
 
 
@@ -43,4 +52,11 @@ __all__ = [
     'RedisLoggingMixin',
     'ProfileView',
     'robots_txt',
+    'StaffUserListView',
+    'StaffUserCreateView',
+    'StaffUserSendValidationEmailView',
+    'StaffUserEditView',
+    'StaffUserSendResetPasswordView',
+    'StaffUserDeleteView',
+    'StaffTeamRolesApiView',
 ]

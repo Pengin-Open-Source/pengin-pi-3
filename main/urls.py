@@ -8,6 +8,8 @@ from main.views import (
     SlugCreateView, SlugEditView, SlugDeleteView, SlugView,
     SlugDynamicCreateView, SlugDynamicEditView,
     ProfileView, SendEmailView, ValidateView, EditPasswordView,
+    StaffUserListView, StaffUserCreateView, StaffUserEditView, StaffUserDeleteView,
+    StaffUserSendValidationEmailView, StaffUserSendResetPasswordView, StaffTeamRolesApiView,
     robots_txt
 )
 from main.sitemaps import StaticAppSitemap, SlugDatabaseSitemap, DynamicAppSitemap
@@ -43,6 +45,17 @@ urlpatterns = [
     # Password Reset routes
     path('generate-prt/', PasswordResetRequestView.as_view(), name='generate_prt'),
     path('reset-password/<uuid:token>/', PasswordResetView.as_view(), name='reset_password'),
+
+    # Core staff console: system-user management (see main/views/staff.py)
+    path('staff/users/', StaffUserListView.as_view(), name='staff_user_list'),
+    path('staff/users/create/', StaffUserCreateView.as_view(), name='staff_user_create'),
+    path('staff/users/<uuid:pk>/edit/', StaffUserEditView.as_view(), name='staff_user_edit'),
+    path('staff/users/<uuid:pk>/delete/', StaffUserDeleteView.as_view(), name='staff_user_delete'),
+    path('staff/users/<uuid:pk>/send-reset/',
+         StaffUserSendResetPasswordView.as_view(), name='staff_user_send_reset'),
+    path('staff/users/<uuid:pk>/send-validation/',
+         StaffUserSendValidationEmailView.as_view(), name='staff_user_send_validation'),
+    path('staff/api/team-roles/<int:team_id>/', StaffTeamRolesApiView.as_view(), name='staff_api_team_roles'),
 
     # Static slug management routes
     path('slug/create/', SlugCreateView.as_view(), name='slug'),
