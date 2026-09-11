@@ -1,0 +1,99 @@
+{# templates/layouts/hero-video.html #}
+{# A full-width video hero banner, followed by a normal content section.    #}
+{# The hero's height is fixed (vh-based, clamped, taller on phone widths)  #}
+{# independent of the overlaid text, so the video's object-fit:cover crop  #}
+{# is predictable instead of varying with however many lines the headline #}
+{# wraps to - worst on phone widths where a stacked column wraps to more   #}
+{# lines. Pass video_url/video_mobile_url/poster_url and hero_h1/hero_h2/  #}
+{# hero_h3/hero_cta_url/hero_cta_text as context, or override the blocks   #}
+{# directly. video_mobile_url is optional - e.g. a portrait crop of the   #}
+{# same footage for phone-width screens - and falls back to video_url if  #}
+{# not given; only one of the two is ever fetched (picked via matchMedia).#}
+{% extends "layout.html" %}
+{% load static %}
+{% block page_title %}{% endblock %}
+{% block jsonld %}{% endblock %}
+{% block captchaScript %}{% endblock %}
+
+{% block pageHeader %}
+<style>
+.hero-video-wrap {
+    height: 70vh;
+    min-height: 420px;
+    max-height: 760px;
+}
+@media (max-width: 767.98px) {
+    .hero-video-wrap {
+        height: 85vh;
+        min-height: 480px;
+        max-height: 900px;
+    }
+}
+</style>
+<div class="hero-video-wrap w-100 position-relative bg-dark text-white overflow-hidden">
+
+    <!-- Background Video Element - source is chosen by JS below so only the
+         desktop or mobile file is fetched, never both. -->
+    <video id="heroVideo" autoplay loop="loop" muted playsinline onended="this.play()"
+           {% if poster_url %}poster="{{ poster_url }}"{% endif %}
+           class="position-absolute top-50 start-50 translate-middle w-100 h-100 object-fit-cover z-0">
+        Your browser does not support the video tag.
+    </video>
+    <script>
+    (function() {
+        var desktopSrc = "{{ video_url|default:'' }}";
+        var mobileSrc = "{{ video_mobile_url|default:'' }}" || desktopSrc;
+        if (!desktopSrc) return;
+        var isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+        var video = document.getElementById('heroVideo');
+        var source = document.createElement('source');
+        source.type = 'video/mp4';
+        source.src = isMobile ? mobileSrc : desktopSrc;
+        video.appendChild(source);
+        video.load();
+    })();
+    </script>
+
+    <!-- Dark Overlay to Ensure Text Readability -->
+    <div class="position-absolute top-0 start-0 w-100 h-100 bg-black opacity-50 z-1"></div>
+
+    <!-- Foreground Content Layer: vertically centered so it clears the fixed
+         navbar regardless of how many lines the headline wraps to -->
+    <div class="container position-absolute top-50 start-50 translate-middle z-2 w-100">
+        <div class="row">
+            <div class="col-lg-8">
+                <h1 class="display-3 fw-bold text-uppercase mb-2 text-white tracking-wide">
+                    {{ hero_h1|default:"Example Hero Heading"|safe }}
+                </h1>
+                {% if hero_h2 %}
+                <div class="mb-4">
+                    <span class="text-decoration-none border-bottom border-primary border-3 pb-1 fs-3 fw-semibold text-white">
+                        {{ hero_h2 }}
+                    </span>
+                </div>
+                {% endif %}
+                <p class="lead text-light mb-4 fs-5">
+                    {{ hero_h3|default:"Replace this block with a real hero/intro section." }}
+                </p>
+                {% if hero_cta_url %}
+                <div>
+                    <a href="{{ hero_cta_url }}" class="btn btn-primary btn-lg px-4 py-2 fw-bold text-uppercase rounded-3 shadow-sm">
+                        {{ hero_cta_text|default:"Learn More" }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block pageContent %}
+{% block middle_article %}
+    <section class="page-section bg-white text-dark mb-0 py-5">
+    <div class="container px-4 px-lg-5 text-center">
+        <p class="text-muted lead">Replace this block with real page content.</p>
+    </div>
+    </section>
+{% endblock %}
+{% endblock %}
