@@ -42,6 +42,14 @@ class User(HistoryMixin, AbstractBaseUser, PermissionsMixin):
     prt_reset_date = models.DateTimeField(null=True, blank=True)
     prt_consumption_date = models.DateTimeField(null=True, blank=True)
 
+    # One-time password sent when staff create an account on someone else's
+    # behalf (main.views.staff.StaffUserCreateView) - lets that person set
+    # their own password and validate their email in a single step, since
+    # they have no password yet to log in and use the normal validation-link
+    # flow.
+    otp_code = models.CharField(max_length=10, blank=True, null=True)
+    otp_expires_at = models.DateTimeField(null=True, blank=True)
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 

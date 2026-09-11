@@ -16,13 +16,25 @@ class Message(Mailer):
         TOKEN=None,
         TYPE=None,
         URL=os.getenv("URL"),
+        OTP=None,
     ):
         Mailer.__init__(self)
         self.RECIPIENT = RECIPIENT
         self.TOKEN = TOKEN or ""
         self.URL = URL or ""
+        self.OTP = OTP or ""
 
-        if TYPE == "user_validation":
+        if TYPE == "staff_account_otp":
+            self.SUBJECT = "Activate Your Account"
+            BODY_TEXT = (
+                f"Activate Your Account\r\nAn administrator created an account for you. "
+                f"Your one-time password is: {self.OTP}\r\n"
+                f"Use it to set your own password and activate your account at "
+                f"https://{self.URL}/activate/{self.TOKEN}"
+            )
+            BODY_HTML = f"""<html><body><h1>Activate Your Account</h1><p>An administrator created an account for you. Your one-time password is:</p><p style="font-size:20px;font-weight:bold;letter-spacing:2px;">{self.OTP}</p><p>Use it to set your own password and activate your account: <a href='https://{self.URL}/activate/{self.TOKEN}'>Activate Account</a></p></body></html>"""
+
+        elif TYPE == "user_validation":
             self.SUBJECT = "Validation Email"
             BODY_TEXT = (
                 f"Validation Email\r\nThis email is an automated message. Verify your"
