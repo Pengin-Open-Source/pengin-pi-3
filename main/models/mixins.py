@@ -4,6 +4,21 @@ from django.db.models.fields.files import FieldFile
 
 from util.utils import UUIDEncoder
 
+# Duck-typed contract, not an imported base class: core has no
+# encrypted-field implementation of its own (there's nothing here worth
+# encrypting yet), but HistoryMixin/AbstractHistory still need to handle
+# one correctly if an app branch adds one (e.g. an SSN field) - forcing
+# every such app to import a class from core, just to satisfy an isinstance
+# check, would be backwards for a CMS whose apps are meant to extend core,
+# not the other way around. Any field whose class defines BOTH of these
+# methods is treated as encrypted-at-rest for history purposes:
+#   - encrypt_for_snapshot(value): value (decrypted) -> ciphertext-safe form to snapshot
+#   - decrypt_from_snapshot(value): the reverse, for get_snapshot() below
+# A field can get both for free by inheriting a small mixin that
+# implements them via its own get_prep_value()/from_db_value() - see
+# util/crypto.py in any app branch that adds one - but core only ever
+# checks for the two method names, never a specific class.
+
 
 class SitemapEntry:
     """
@@ -57,6 +72,17 @@ class HistoryMixin:
             if isinstance(value, FieldFile):
                 # File/ImageField isn't JSON-serializable - store the stored name/key.
                 value = str(value)
+            elif hasattr(field, 'encrypt_for_snapshot'):
+                # field.value_from_object() already ran the field's own
+                # from_db_value() (via the ORM fetch above), so `value`
+                # here is the DECRYPTED plaintext (e.g. a real SSN) -
+                # storing that directly would put plaintext PII in this
+                # model's History table forever, defeating the point of
+                # encrypting the column. Re-encrypt it for the snapshot;
+                # AbstractHistory.get_snapshot() is what decrypts it back
+                # for any caller that needs the real value.
+                if value not in (None, ''):
+                    value = field.encrypt_for_snapshot(value)
             snapshot[field.name] = value
         history_model.objects.create(object=self, user=user, snapshot=snapshot)
 
@@ -71,3 +97,22 @@ class AbstractHistory(models.Model):
 
     def __str__(self):
         return f'{self.object_id} @ {self.changed_at}'
+
+    def get_snapshot(self):
+        """Returns this history entry's snapshot with any encrypted-at-rest
+        fields (SSN, etc. - see the duck-typed contract in this module's
+        docstring above HistoryMixin) decrypted back to their real values.
+        ALWAYS use this instead of reading .snapshot directly when you need
+        a field's actual value (e.g. a revert view doing
+        setattr(obj, name, value)) - .snapshot stores encrypted fields as
+        ciphertext, and setting a live field to that ciphertext string
+        (which then gets re-encrypted on save()) would silently corrupt the
+        field into double-encrypted garbage instead of reverting it."""
+        model = self._meta.get_field('object').related_model
+        fields_by_name = {f.name: f for f in model._meta.fields}
+        result = dict(self.snapshot)
+        for name, value in result.items():
+            field = fields_by_name.get(name)
+            if field is not None and hasattr(field, 'decrypt_from_snapshot') and value not in (None, ''):
+                result[name] = field.decrypt_from_snapshot(value)
+        return result
