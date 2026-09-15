@@ -8,6 +8,7 @@ from .event import (
     Event, EventHistory, EventParticipant, EventReservation,
     expand_recurring_occurrences, get_local_time_beginning_of_month_in_utc,
 )
+from .subscription import Subscription, SubscriptionHistory, notify_subscribers
 # TeamRole/TeamUserRole are defined in main/auth/models.py (the central RBAC
 # framework - see main/auth/__init__.py), but registered here so Django
 # picks them up as part of the 'main' app and their migrations land in
@@ -32,6 +33,9 @@ __all__ = [
     'EventReservation',
     'expand_recurring_occurrences',
     'get_local_time_beginning_of_month_in_utc',
+    'Subscription',
+    'SubscriptionHistory',
+    'notify_subscribers',
     'TeamRole',
     'TeamRoleHistory',
     'TeamUserRole',

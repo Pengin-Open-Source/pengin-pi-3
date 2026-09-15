@@ -1,0 +1,12 @@
+{% extends "layouts/centered-card-form.html" %}
+
+{% block top_left %}
+<h1 class="h3 fw-bold text-secondary m-0">Subscription Confirmed</h1>
+{% endblock %}
+
+{% block middle_article %}
+<p class="text-muted mb-0">
+    You'll now get email updates about <strong>{{ subscription.content_object|default:"this" }}</strong>.
+    You can unsubscribe at any time using the link in any update email.
+</p>
+{% endblock %}

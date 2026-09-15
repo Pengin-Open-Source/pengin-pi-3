@@ -35,6 +35,13 @@ LOGOUT_REDIRECT_URL = '/'
 #ALLOWED HOSTS
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
 
+# Whether main.views.subscription.SubscribeView requires a logged-in
+# account (True) or also accepts an anonymous email address confirmed via
+# a signed link (False, the default) - see main/models/subscription.py's
+# module docstring for the reasoning. A site-level policy choice, not a
+# core capability restriction: core supports both paths either way.
+SUBSCRIPTIONS_REQUIRE_ACCOUNT = config('SUBSCRIPTIONS_REQUIRE_ACCOUNT', default=False, cast=bool)
+
 # Application definition
 
 INSTALLED_APPS = [
