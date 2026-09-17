@@ -31,6 +31,7 @@ from .staff import (
     StaffUserDeleteView,
     StaffTeamRolesApiView,
 )
+from .subscription import SubscribeView, ConfirmSubscriptionView, UnsubscribeView
 from util.mixins import RedisLoggingMixin
 
 
@@ -61,4 +62,7 @@ __all__ = [
     'StaffUserSendResetPasswordView',
     'StaffUserDeleteView',
     'StaffTeamRolesApiView',
+    'SubscribeView',
+    'ConfirmSubscriptionView',
+    'UnsubscribeView',
 ]

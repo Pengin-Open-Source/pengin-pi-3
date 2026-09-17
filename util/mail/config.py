@@ -17,12 +17,18 @@ class Message(Mailer):
         TYPE=None,
         URL=os.getenv("URL"),
         OTP=None,
+        OBJECT_LABEL=None,
+        OBJECT_URL=None,
+        UNSUBSCRIBE_URL=None,
     ):
         Mailer.__init__(self)
         self.RECIPIENT = RECIPIENT
         self.TOKEN = TOKEN or ""
         self.URL = URL or ""
         self.OTP = OTP or ""
+        self.OBJECT_LABEL = OBJECT_LABEL or "this"
+        self.OBJECT_URL = OBJECT_URL or ""
+        self.UNSUBSCRIBE_URL = UNSUBSCRIBE_URL or ""
 
         if TYPE == "staff_account_otp":
             self.SUBJECT = "Activate Your Account"
@@ -49,6 +55,22 @@ class Message(Mailer):
                 f" https://{self.URL}/reset-password/{self.TOKEN}"
             )
             BODY_HTML = f"""<html><body><h1>Password Reset</h1><p><a href='https://{self.URL}/reset-password/{self.TOKEN}'>Reset password</a></p></body></html>"""
+
+        elif TYPE == "subscription_confirm":
+            self.SUBJECT = f"Confirm your subscription to {self.OBJECT_LABEL}"
+            BODY_TEXT = (
+                f"Confirm your subscription\r\nConfirm you want email updates about "
+                f"{self.OBJECT_LABEL} at https://{self.URL}/subscriptions/confirm/{self.TOKEN}/"
+            )
+            BODY_HTML = f"""<html><body><h1>Confirm your subscription</h1><p>Confirm you want email updates about <strong>{self.OBJECT_LABEL}</strong>: <a href='https://{self.URL}/subscriptions/confirm/{self.TOKEN}/'>Confirm Subscription</a></p></body></html>"""
+
+        elif TYPE == "subscription_notify":
+            self.SUBJECT = f"Update: {self.OBJECT_LABEL}"
+            BODY_TEXT = (
+                f"{self.OBJECT_LABEL} was updated.\r\nView it at {self.OBJECT_URL}\r\n\r\n"
+                f"Unsubscribe from these updates: {self.UNSUBSCRIBE_URL}"
+            )
+            BODY_HTML = f"""<html><body><h1>{self.OBJECT_LABEL} was updated</h1><p><a href='{self.OBJECT_URL}'>View update</a></p><p style="font-size:12px;color:#888;"><a href='{self.UNSUBSCRIBE_URL}'>Unsubscribe from these updates</a></p></body></html>"""
 
         else:
             self.SUBJECT = "Notification"
