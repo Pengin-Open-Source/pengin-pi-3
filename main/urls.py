@@ -10,6 +10,7 @@ from main.views import (
     ProfileView, SendEmailView, ValidateView, ActivateAccountView, EditPasswordView,
     StaffUserListView, StaffUserCreateView, StaffUserEditView, StaffUserDeleteView,
     StaffUserSendValidationEmailView, StaffUserSendResetPasswordView, StaffTeamRolesApiView,
+    SubscribeView, ConfirmSubscriptionView, UnsubscribeView,
     robots_txt
 )
 from main.sitemaps import StaticAppSitemap, SlugDatabaseSitemap, DynamicAppSitemap
@@ -57,6 +58,14 @@ urlpatterns = [
     path('staff/users/<uuid:pk>/send-validation/',
          StaffUserSendValidationEmailView.as_view(), name='staff_user_send_validation'),
     path('staff/api/team-roles/<int:team_id>/', StaffTeamRolesApiView.as_view(), name='staff_api_team_roles'),
+
+    # Generic subscribe/confirm/unsubscribe routes (see
+    # main/views/subscription.py + main/models/subscription.py) - addressed
+    # by ContentType app_label/model + object pk, so any app's model can be
+    # subscribed to without these routes knowing anything about it.
+    path('subscribe/<str:app_label>/<str:model>/<uuid:object_id>/', SubscribeView.as_view(), name='subscribe'),
+    path('subscriptions/confirm/<uuid:token>/', ConfirmSubscriptionView.as_view(), name='confirm_subscription'),
+    path('subscriptions/unsubscribe/<uuid:token>/', UnsubscribeView.as_view(), name='unsubscribe'),
 
     # Static slug management routes
     path('slug/create/', SlugCreateView.as_view(), name='slug'),

@@ -1,0 +1,11 @@
+{% extends "layouts/centered-card-form.html" %}
+
+{% block top_left %}
+<h1 class="h3 fw-bold text-secondary m-0">Unsubscribed</h1>
+{% endblock %}
+
+{% block middle_article %}
+<p class="text-muted mb-0">
+    You won't receive any more email updates about <strong>{{ subscription.content_object|default:"this" }}</strong>.
+</p>
+{% endblock %}

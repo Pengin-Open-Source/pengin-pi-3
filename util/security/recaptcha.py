@@ -3,6 +3,7 @@ import json
 import os
 import urllib.parse
 import urllib.request
+from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import redirect
 
@@ -12,15 +13,20 @@ VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
 def verify_recaptcha_token(token, min_score=0.5):
     """
     Validates a Google reCAPTCHA v3 token using Python's standard library.
+
+    If RECAPTCHA_SITE_KEY/RECAPTCHA_SECRET_KEY aren't configured, reCAPTCHA is
+    considered disabled and verification is skipped (treated as passing) so
+    forms aren't permanently locked out in environments without Google keys.
     """
+    if not getattr(settings, 'RECAPTCHA_ENABLED', False):
+        print("[reCAPTCHA Debug] reCAPTCHA not configured - skipping verification (disabled)")
+        return True
+
     if not token:
         print("[reCAPTCHA Debug] No token received in request POST data")
         return False
 
     secret_key = os.getenv("RECAPTCHA_SECRET_KEY")
-    if not secret_key:
-        print("[reCAPTCHA Debug] RECAPTCHA_SECRET_KEY missing in environment variables")
-        return False
 
     try:
         data = urllib.parse.urlencode({
