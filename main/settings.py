@@ -65,14 +65,41 @@ SITE_ID = 1
 
 load_dotenv()
 
+# --- Optional subsystem detection ---------------------------------------
+# AWS/Google credentials are optional. Each integration below is only wired
+# up if its required keys are present in the environment; otherwise it is
+# disabled and the app falls back to a safe local/no-op default instead of
+# crashing at import time or failing at request time.
+AWS_SES_ENABLED = bool(
+    config('SES_USERNAME_SMTP', default='')
+    and config('SES_PASSWORD_SMTP', default='')
+    and config('SES_SENDER', default='')
+)
+AWS_S3_ENABLED = bool(
+    config('S3_KEY', default='')
+    and config('S3_SECRET', default='')
+    and config('S3_BUCKET', default='')
+)
+RECAPTCHA_ENABLED = bool(
+    config('RECAPTCHA_SITE_KEY', default='')
+    and config('RECAPTCHA_SECRET_KEY', default='')
+)
+
 # Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = config('SES_HOST', default='email-smtp.us-west-2.amazonaws.com')
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = config('SES_USERNAME_SMTP')
-EMAIL_HOST_PASSWORD = config('SES_PASSWORD_SMTP')
-DEFAULT_FROM_EMAIL = f"{config('SES_SENDER_NAME')} <{config('SES_SENDER')}>"
+if AWS_SES_ENABLED:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = config('SES_HOST', default='email-smtp.us-west-2.amazonaws.com')
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = config('SES_USERNAME_SMTP')
+    EMAIL_HOST_PASSWORD = config('SES_PASSWORD_SMTP')
+    DEFAULT_FROM_EMAIL = f"{config('SES_SENDER_NAME', default='')} <{config('SES_SENDER')}>"
+else:
+    # No SES credentials configured - don't attempt to send mail over SMTP.
+    # Emails are printed to the console instead of being delivered.
+    print("[settings] SES credentials not found - email sending is disabled (console backend).")
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = f"{config('SES_SENDER_NAME', default='')} <{config('SES_SENDER', default='noreply@localhost')}>"
 
 MIDDLEWARE = [
     'util.middleware.blocklist.HardenedBlocklistMiddleware',
@@ -114,16 +141,38 @@ WSGI_APPLICATION = 'main.wsgi.application'
 
 # Default to SQLite for local development
 # Docker environment variables will override this for production
-DATABASES = {
-    'default': {
-        'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
-        'NAME': config('DB_NAME', default=BASE_DIR / 'db.sqlite3'),
-        'USER': config('DB_USER', default=None),
-        'PASSWORD': config('DB_PASSWORD', default=None),
-        'HOST': config('DB_HOST', default=None),
-        'PORT': config('DB_PORT', default=None),
+_db_engine = config('DB_ENGINE', default='django.db.backends.sqlite3')
+_db_name = config('DB_NAME', default='')
+_db_user = config('DB_USER', default='')
+_db_password = config('DB_PASSWORD', default='')
+_db_host = config('DB_HOST', default='')
+_db_port = config('DB_PORT', default='')
+
+# A non-sqlite engine needs NAME/USER/PASSWORD/HOST to actually connect. If
+# any of those are missing (e.g. DB_ENGINE=postgresql copied over without the
+# rest), fall back to a local SQLite file instead of failing at request time.
+if _db_engine != 'django.db.backends.sqlite3' and not (_db_name and _db_user and _db_password and _db_host):
+    print(f"[settings] DB_ENGINE={_db_engine} requested but DB_NAME/DB_USER/DB_PASSWORD/DB_HOST are incomplete - falling back to local SQLite database.")
+    _db_engine = 'django.db.backends.sqlite3'
+
+if _db_engine == 'django.db.backends.sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': _db_engine,
+            'NAME': _db_name or (BASE_DIR / 'db.sqlite3'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': _db_engine,
+            'NAME': _db_name,
+            'USER': _db_user,
+            'PASSWORD': _db_password,
+            'HOST': _db_host,
+            'PORT': _db_port or None,
+        }
+    }
 MONGODB_URI = config('MONGODB_URI', default="mongodb://ferretdb:27017/")
 MONGODB_DB_NAME = config('MONGODB_DB_NAME', default="dynamic_cms")
 
@@ -212,6 +261,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # File storage backend
 FILE_STORAGE_BACKEND = config('FILE_STORAGE_BACKEND', default='local') # 's3' or 'local'
+if FILE_STORAGE_BACKEND == 's3' and not AWS_S3_ENABLED:
+    print("[settings] FILE_STORAGE_BACKEND=s3 but S3_KEY/S3_SECRET/S3_BUCKET are missing - falling back to local storage.")
+    FILE_STORAGE_BACKEND = 'local'
 
 # Media files (uploads)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/#serving-files-uploaded-by-a-user-during-development

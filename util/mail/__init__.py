@@ -1,12 +1,17 @@
 import os
 import boto3
 from dotenv import load_dotenv
+from django.conf import settings
 from util.mail.config import Message as Mail
 
 load_dotenv()
 
 
 def send_mail(RECIPIENT, TOKEN=None, TYPE=None, **kwargs):
+  if not getattr(settings, 'AWS_SES_ENABLED', False):
+    print(f"[mail] AWS SES not configured - skipping email to {RECIPIENT} (type={TYPE})")
+    return None
+
   mailer = Mail(RECIPIENT=RECIPIENT, TOKEN=TOKEN, TYPE=TYPE, **kwargs)
   try:
     client = boto3.client(
