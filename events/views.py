@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 from urllib.parse import urlencode
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -33,7 +33,23 @@ from util.security.recaptcha import RecaptchaRequiredMixin
 from .calendar import EventCalendar
 from .forms import EventForm, CalendarSettingsForm
 
-myCal = EventCalendar()
+
+def get_request_timezone(request):
+    """The submitter's own IANA zone name, captured client-side into the
+    `time_zone` cookie on every page load - used to interpret/display
+    calendar-event times in the viewer's own zone instead of Django's
+    default TIME_ZONE (UTC). A naive "3:00 PM" typed into the start/end
+    <input type="datetime-local"> has no timezone attached on its own -
+    left to Django's default, it gets parsed/rendered as UTC verbatim
+    instead of the zone the submitter actually meant. Falls back to UTC
+    for a first-ever/cookie-less request or a bad zone name, rather than
+    a 500."""
+    tz_str = request.COOKIES.get('time_zone') or request.session.get('time_zone_string') or 'UTC'
+    try:
+        return ZoneInfo(tz_str)
+    except (ZoneInfoNotFoundError, ValueError):
+        return ZoneInfo('UTC')
+
 
 # A validated customer account could otherwise reserve an unbounded number
 # of slots (nothing else in the flow limits this) - a soft cap on how many
@@ -47,22 +63,28 @@ class CalendarMonth(PublicEventsOrLoggedInMixin, View):
     template_name = "calendar/calendar_month.html"
 
     def get(self, request, year=None, month=None):
-        user_time_zone_str = request.COOKIES.get('time_zone') or request.session.get('time_zone_string') or 'UTC'
-        myCal.set_time_zone(user_time_zone_str)
+        # A fresh EventCalendar per request - this used to be a module-level
+        # singleton shared across every request (and every concurrent
+        # user), so a timezone (or first-day-of-week) set for one request/
+        # user could leak into another's render under concurrent access.
+        # first_day_of_week lives in the session (per-user, set via
+        # CalendarSettings below) rather than on this object, for the same
+        # reason.
+        request_tz = get_request_timezone(request)
+        my_cal = EventCalendar()
+        my_cal.set_time_zone(request_tz)
+        my_cal.setfirstweekday(request.session.get('first_day_of_week', 6))
 
-        present_local_time = timezone.now().astimezone(ZoneInfo(user_time_zone_str))
+        present_local_time = timezone.now().astimezone(request_tz)
         present_year, present_month = present_local_time.year, present_local_time.month
 
         if year is None or month is None:
             year, month = present_year, present_month
         year, month = int(year), int(month)
 
-        if not myCal.user_settings:
-            myCal.setfirstweekday(6)
-
         group_id = request.GET.get('group')
         search_query = request.GET.get('q')
-        calendar_html = myCal.formatmonth(
+        calendar_html = my_cal.formatmonth(
             year, month, current_user=request.user,
             group_id=group_id, search_query=search_query,
         )
@@ -121,12 +143,28 @@ class DetailEvent(PublicEventsOrLoggedInMixin, UserPassesTestMixin, View):
         role_page_obj = role_paginator.get_page(page_number)
 
         occurrence_str = request.GET.get('occurrence')
+        # Computed against the event's true (UTC) start, same as
+        # expand_recurring_occurrences (main/models/event.py) - before the
+        # display-only local conversion below, so a viewer near a
+        # timezone's midnight boundary still matches the same occurrence
+        # the calendar linked to.
         occurrence_date = event.start_date()
         if event.is_recurring and occurrence_str:
             try:
                 occurrence_date = datetime.strptime(occurrence_str, '%Y-%m-%d').date()
             except ValueError:
                 pass
+
+        # Convert to the viewer's own timezone for display - event.start_time()/
+        # end_time() (used below for recurring events) just format whatever's
+        # attached to the instance, so this has to happen before rendering
+        # rather than relying on template auto-localization alone (which only
+        # covers direct {{ event.start_datetime|date:... }} use, not these
+        # method calls). See get_request_timezone / CreateEvent/EditEvent for
+        # the save-side half of this same fix.
+        request_tz = get_request_timezone(request)
+        event.start_datetime = event.start_datetime.astimezone(request_tz)
+        event.end_datetime = event.end_datetime.astimezone(request_tz)
 
         context = {
             "primary_title": event.title,
@@ -139,29 +177,30 @@ class DetailEvent(PublicEventsOrLoggedInMixin, UserPassesTestMixin, View):
             "event_roles": role_page_obj.object_list,
         }
 
-        if not event.template_name and not event.render_template:
-            return render(request, self.template_name, context)
+        with timezone.override(request_tz):
+            if not event.template_name and not event.render_template:
+                return render(request, self.template_name, context)
 
-        # Slug-style dynamic page: if the event has a template_name and/or
-        # render_template set, render that instead of the standard detail
-        # page (see util.dynamic_render.render_dynamic_content - shared
-        # with main.views.slug.SlugView, since Event has the same field
-        # shape). schema_data from event.json is merged into context first,
-        # same as SlugView does with a Slug's json field.
-        raw_json = event.json
-        if isinstance(raw_json, str) and raw_json.strip():
-            try:
-                schema_data = json.loads(raw_json)
-            except json.JSONDecodeError:
+            # Slug-style dynamic page: if the event has a template_name and/or
+            # render_template set, render that instead of the standard detail
+            # page (see util.dynamic_render.render_dynamic_content - shared
+            # with main.views.slug.SlugView, since Event has the same field
+            # shape). schema_data from event.json is merged into context first,
+            # same as SlugView does with a Slug's json field.
+            raw_json = event.json
+            if isinstance(raw_json, str) and raw_json.strip():
+                try:
+                    schema_data = json.loads(raw_json)
+                except json.JSONDecodeError:
+                    schema_data = {}
+            elif isinstance(raw_json, dict):
+                schema_data = raw_json
+            else:
                 schema_data = {}
-        elif isinstance(raw_json, dict):
-            schema_data = raw_json
-        else:
-            schema_data = {}
-        context.update(schema_data)
+            context.update(schema_data)
 
-        response = render_dynamic_content(request, event.template_name, event.render_template, context)
-        return response if response is not None else HttpResponse("")
+            response = render_dynamic_content(request, event.template_name, event.render_template, context)
+            return response if response is not None else HttpResponse("")
 
 
 class EventParticipantsDetailView(LoginAndValidationRequiredMixin, UserPassesTestMixin, View):
@@ -213,39 +252,41 @@ class CreateEvent(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPas
         }
 
     def get(self, request, *args, **kwargs):
-        if "pk" in self.kwargs:
-            form = EventForm(initial=self.get_initial())
-            primary_title = "Duplicate Event: " + self.get_initial()["title"]
-        else:
-            form = EventForm()
-            primary_title = "Create Event"
+        with timezone.override(get_request_timezone(request)):
+            if "pk" in self.kwargs:
+                form = EventForm(initial=self.get_initial())
+                primary_title = "Duplicate Event: " + self.get_initial()["title"]
+            else:
+                form = EventForm()
+                primary_title = "Create Event"
 
-        return render(request, self.template_name, {
-            "primary_title": primary_title,
-            "action": "create",
-            "form": form,
-        })
+            return render(request, self.template_name, {
+                "primary_title": primary_title,
+                "action": "create",
+                "form": form,
+            })
 
     def post(self, request, **kwargs):
-        form = EventForm(request.POST)
-        if form.is_valid():
-            event = form.save(commit=False)
-            event.author = request.user
-            event.organizer = form.cleaned_data['organizer']
-            event.save()
-            form.save_m2m()
+        with timezone.override(get_request_timezone(request)):
+            form = EventForm(request.POST)
+            if form.is_valid():
+                event = form.save(commit=False)
+                event.author = request.user
+                event.organizer = form.cleaned_data['organizer']
+                event.save()
+                form.save_m2m()
 
-            for attendee in form.participants_to_add:
-                EventParticipant.objects.create(event=event, participant=attendee, added_by=request.user)
+                for attendee in form.participants_to_add:
+                    EventParticipant.objects.create(event=event, participant=attendee, added_by=request.user)
 
-            event.save_history(user=request.user)
-            return redirect("events:calendar")
+                event.save_history(user=request.user)
+                return redirect("events:calendar")
 
-        return render(request, self.template_name, {
-            "primary_title": "Create Event",
-            "action": "create",
-            "form": form,
-        })
+            return render(request, self.template_name, {
+                "primary_title": "Create Event",
+                "action": "create",
+                "form": form,
+            })
 
 
 class EditEvent(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPassesTestMixin, View):
@@ -264,31 +305,33 @@ class EditEvent(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPasse
         }
 
     def get(self, request, pk):
-        return render(request, self.template_name, self.get_context_data())
+        with timezone.override(get_request_timezone(request)):
+            return render(request, self.template_name, self.get_context_data())
 
     def post(self, request, pk):
         event = get_object_or_404(Event, id=pk)
-        form = EventForm(request.POST, instance=event)
-        if form.is_valid():
-            event.save_history(user=request.user)
+        with timezone.override(get_request_timezone(request)):
+            form = EventForm(request.POST, instance=event)
+            if form.is_valid():
+                event.save_history(user=request.user)
 
-            with transaction.atomic():
-                event = form.save(commit=False)
-                event.last_edited_by = request.user
-                event.date = timezone.now()
-                event.save()
-                form.save_m2m()
+                with transaction.atomic():
+                    event = form.save(commit=False)
+                    event.last_edited_by = request.user
+                    event.date = timezone.now()
+                    event.save()
+                    form.save_m2m()
 
-                for attendee in form.participants_to_add:
-                    EventParticipant.objects.create(event=event, participant=attendee, added_by=request.user)
-                EventParticipant.objects.filter(
-                    event=event, participant__in=form.participants_to_remove).delete()
+                    for attendee in form.participants_to_add:
+                        EventParticipant.objects.create(event=event, participant=attendee, added_by=request.user)
+                    EventParticipant.objects.filter(
+                        event=event, participant__in=form.participants_to_remove).delete()
 
-            return redirect("events:event_detail", pk=event.id)
+                return redirect("events:event_detail", pk=event.id)
 
-        context = self.get_context_data()
-        context["form"] = form
-        return render(request, self.template_name, context)
+            context = self.get_context_data()
+            context["form"] = form
+            return render(request, self.template_name, context)
 
 
 class DeleteEvent(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPassesTestMixin, View):
@@ -315,7 +358,7 @@ class CalendarSettings(LoginAndValidationRequiredMixin, View):
     template_name = "calendar/calendar_settings.html"
 
     def get(self, request):
-        form = CalendarSettingsForm(initial={'first_day_of_week': myCal.firstweekday})
+        form = CalendarSettingsForm(initial={'first_day_of_week': request.session.get('first_day_of_week', 6)})
         return render(request, self.template_name, {
             "form": form,
             "primary_title": "Calendar Settings",
@@ -324,8 +367,7 @@ class CalendarSettings(LoginAndValidationRequiredMixin, View):
     def post(self, request):
         form = CalendarSettingsForm(request.POST)
         if form.is_valid():
-            myCal.setfirstweekday(int(form.cleaned_data['first_day_of_week']))
-            myCal.user_settings = True
+            request.session['first_day_of_week'] = int(form.cleaned_data['first_day_of_week'])
             return redirect('events:calendar')
 
         return render(request, self.template_name, {
@@ -384,17 +426,28 @@ class ReserveEventSlotView(LoginAndValidationRequiredMixin, RateLimitedPostMixin
         event = get_object_or_404(Event, id=pk)
         occurrence_date = self.get_occurrence_date(request, event)
         raw_slots = get_available_slots(event, occurrence_date)
+        request_tz = get_request_timezone(request)
 
         # Shape for the shared templates/widgets/slot-picker.html (a
         # {label, value, available} row per slot); form_action carries the
         # occurrence date in the query string so the POST handler below can
         # recover it via request.GET even though the widget's own hidden
-        # field only carries the chosen slot's start time.
-        slots = [{
-            'label': slot['start'].strftime('%-I:%M %p'),
-            'value': slot['start'].isoformat(),
-            'available': not slot['reserved'],
-        } for slot in raw_slots]
+        # field only carries the chosen slot's start time. slot-picker.html
+        # renders `label` as a plain string (not a template date filter), so
+        # it can't auto-localize itself - each slot's true-UTC start has to
+        # be converted to the viewer's own zone here, before formatting. The
+        # `value` round-trips fine converted too: an aware datetime's
+        # equality/hash is based on the actual instant, not which zone's
+        # digits it's printed in, so POST's dict lookup against freshly
+        # recomputed (still-UTC) slots still matches correctly.
+        slots = []
+        for slot in raw_slots:
+            local_start = slot['start'].astimezone(request_tz)
+            slots.append({
+                'label': local_start.strftime('%-I:%M %p'),
+                'value': local_start.isoformat(),
+                'available': not slot['reserved'],
+            })
         form_action = f"?occurrence={occurrence_date.isoformat()}"
 
         return render(request, self.template_name, {
@@ -452,10 +505,11 @@ class MyReservationsView(LoginAndValidationRequiredMixin, View):
         reservations = EventReservation.objects.filter(
             reserved_by=request.user, slot_start__gte=timezone.now()
         ).select_related('event').order_by('slot_start')
-        return render(request, self.template_name, {
-            "primary_title": "My Reservations",
-            "reservations": reservations,
-        })
+        with timezone.override(get_request_timezone(request)):
+            return render(request, self.template_name, {
+                "primary_title": "My Reservations",
+                "reservations": reservations,
+            })
 
 
 class FindPersonEventView(LoginAndValidationRequiredMixin, View):
@@ -480,11 +534,12 @@ class FindPersonEventView(LoginAndValidationRequiredMixin, View):
         if len(matches) == 1:
             return redirect('events:reserve_slot', pk=matches[0].id)
 
-        return render(request, self.template_name, {
-            "primary_title": "Find a Person",
-            "query": query,
-            "matches": matches,
-        })
+        with timezone.override(get_request_timezone(request)):
+            return render(request, self.template_name, {
+                "primary_title": "Find a Person",
+                "query": query,
+                "matches": matches,
+            })
 
 
 class CancelReservationView(LoginAndValidationRequiredMixin, RateLimitedPostMixin, UserPassesTestMixin, View):

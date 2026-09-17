@@ -1,4 +1,14 @@
 # events/forms.py
+# start_datetime/end_datetime use a native <input type="datetime-local"> -
+# its value is naive wall-clock text (e.g. "3:00 PM") with no timezone
+# attached. Django's DateTimeField only turns that into the correct aware
+# UTC value if the *current* timezone is activated to whatever zone the
+# submitter actually meant. CreateEvent/EditEvent (events/views.py) wrap
+# their get()/post() bodies in `timezone.override(get_request_timezone(
+# request))` so that conversion - both parsing input on save, and
+# pre-filling this same widget with the correct local time on edit/
+# duplicate - happens against the submitter's own zone instead of
+# silently defaulting to settings.TIME_ZONE (UTC).
 from django import forms
 
 from main.models.users import User

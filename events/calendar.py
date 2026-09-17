@@ -6,7 +6,6 @@
 # calls both moved to main/main.auth (see main/models/event.py and
 # main/auth/events.py) since other things may want them without this app.
 from datetime import date
-from zoneinfo import ZoneInfo
 import calendar
 
 from django.db.models import Q
@@ -25,7 +24,6 @@ class EventCalendar(calendar.HTMLCalendar):
         self.year = None
         self.month = None
         self.user_time_zone = None
-        self.user_settings = False
         super().__init__()
 
     def get_event_html(self, events):
@@ -51,8 +49,8 @@ class EventCalendar(calendar.HTMLCalendar):
             )
         return f"<div class='calendar-day-events mt-1'>{items}</div>"
 
-    def set_time_zone(self, time_zone_str):
-        self.user_time_zone = ZoneInfo(time_zone_str)
+    def set_time_zone(self, zone):
+        self.user_time_zone = zone
 
     def formatday(self, day, weekday):
         try:
