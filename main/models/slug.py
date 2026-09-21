@@ -59,6 +59,29 @@ class Slug(HistoryMixin, models.Model):
     object_id = models.UUIDField(null=True, blank=True)
     content_object = GenericForeignKey("content_type", "object_id")
 
+    # Set on every page within a wiki, including the root itself (which
+    # points to itself) - lets a page's wiki membership, and which wiki
+    # tree it belongs to, be found in one query instead of walking `parent`
+    # ancestry on every render. None means this Slug isn't part of a wiki.
+    # Any existing Slug can become a wiki root on a whim (see
+    # main/views/wiki.py) - this is deliberately not a separate model, per
+    # the "wiki is a subset of slug" design: a wiki page is a plain Slug,
+    # just one with wiki_root/wiki_body set and rendered through the wiki
+    # layout instead of template_name/render_template/json.
+    wiki_root = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="wiki_pages",
+    )
+
+    # Markdown article body for a wiki page (main.views.wiki), rendered via
+    # util.wiki_markdown - supports [[Page Name]] / [[Page Name|Display
+    # Text]] links resolved within this page's wiki_root tree. Kept
+    # separate from render_template/json, which non-wiki Slugs still use.
+    wiki_body = models.TextField(blank=True)
+
     date = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -109,6 +132,14 @@ class Slug(HistoryMixin, models.Model):
             curr = curr.parent
         parts.reverse()
         return f"/{'/'.join(parts)}/"
+
+    @property
+    def is_wiki_root(self):
+        return self.wiki_root_id is not None and self.wiki_root_id == self.id
+
+    @property
+    def is_wiki_page(self):
+        return self.wiki_root_id is not None
 
 
 class SlugHistory(AbstractHistory):

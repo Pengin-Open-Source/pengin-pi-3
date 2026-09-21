@@ -34,14 +34,21 @@ from .models import TeamRole, TeamRoleHistory, TeamUserRole, TeamUserRoleHistory
 from .permissions import (
     is_root,
     is_executive_manager,
+    is_tobu_pengin_manager,
+    is_independent_contributor_maintainer,
     is_manager_of_group,
     get_managed_groups,
     can_access_group,
     get_all_groups_for_user_with_extended_rbac,
     get_users_with_extended_rbac_to_group,
     display_title_for_user,
+    is_sitewide_forum_moderator,
+    can_moderate_forum,
+    can_manage_blog,
+    TOBU_PENGIN_DEPARTMENT_NAME,
+    INDEPENDENT_CONTRIBUTOR_DEPARTMENT_NAME,
 )
-from .mixins import LoginAndValidationRequiredMixin, StaffRequiredMixin
+from .mixins import LoginAndValidationRequiredMixin, StaffRequiredMixin, ExecutiveManagerRequiredMixin
 from .decorators import group_required, is_admin_provider, is_admin_required, user_group_provider
 from .principals import Need, UserNeed, RoleNeed, TypeNeed, ActionNeed, ItemNeed, PermissionDenied
 from .sync import sync_team_role_groups, cascade_is_staff
@@ -64,10 +71,13 @@ from .events import (
 
 __all__ = [
     'TeamRole', 'TeamRoleHistory', 'TeamUserRole', 'TeamUserRoleHistory',
-    'is_root', 'is_executive_manager', 'is_manager_of_group', 'get_managed_groups',
+    'is_root', 'is_executive_manager', 'is_tobu_pengin_manager', 'is_independent_contributor_maintainer',
+    'is_manager_of_group', 'get_managed_groups',
     'can_access_group', 'get_all_groups_for_user_with_extended_rbac',
     'get_users_with_extended_rbac_to_group', 'display_title_for_user',
-    'LoginAndValidationRequiredMixin', 'StaffRequiredMixin',
+    'is_sitewide_forum_moderator', 'can_moderate_forum', 'can_manage_blog',
+    'TOBU_PENGIN_DEPARTMENT_NAME', 'INDEPENDENT_CONTRIBUTOR_DEPARTMENT_NAME',
+    'LoginAndValidationRequiredMixin', 'StaffRequiredMixin', 'ExecutiveManagerRequiredMixin',
     'group_required', 'is_admin_provider', 'is_admin_required', 'user_group_provider',
     'Need', 'UserNeed', 'RoleNeed', 'TypeNeed', 'ActionNeed', 'ItemNeed', 'PermissionDenied',
     'sync_team_role_groups',

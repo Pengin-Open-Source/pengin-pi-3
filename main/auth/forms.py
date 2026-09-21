@@ -54,10 +54,12 @@ class TeamRoleAssignmentForm(forms.ModelForm):
         role = cleaned_data.get('role')
 
         if team and not role:
-            # Every seeded department has an "Employee" title by
+            # Every seeded department has a "Volunteer" title by
             # convention (see main/management/commands/seed_departments.py),
-            # so this is a real default, not a guess.
-            role = TeamRole.objects.get(group=team, name='Employee')
+            # so this is a real default, not a guess. Staff here are
+            # volunteers, not employees - see main/auth/permissions.py's
+            # display_title_for_user() docstring.
+            role = TeamRole.objects.get(group=team, name='Volunteer')
             cleaned_data['role'] = role
         if role and team and role.group_id != team.id:
             raise forms.ValidationError("Selected role doesn't belong to the selected team.")
@@ -84,4 +86,35 @@ class StaffUserForm(forms.ModelForm):
             'validated': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class DepartmentForm(forms.ModelForm):
+    """Create/rename a department (auth.Group) - the top level of the org
+    chart TeamRole titles are scoped under. Used by main/views/roles.py,
+    gated there to Executive-tier staff only (main.auth.is_executive_manager)
+    since a department is structural, not day-to-day membership."""
+    class Meta:
+        model = Group
+        fields = ['name']
+        widgets = {'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Engineering'})}
+
+
+class TeamRoleForm(forms.ModelForm):
+    """Create/rename a title (TeamRole) within one department - the
+    `group` itself is set by the view from the URL, not exposed as a
+    field here, since a title's department never changes after creation
+    (renaming it into a different department would silently reassign
+    everyone who holds it). Used by main/views/roles.py, gated there to
+    Manager-tier staff for that specific department
+    (main.auth.is_manager_of_group)."""
+    class Meta:
+        model = TeamRole
+        fields = ['name', 'description', 'is_manager_role', 'is_forum_moderator_role', 'is_blog_author_role']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "e.g. Volunteer"}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'is_manager_role': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_forum_moderator_role': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_blog_author_role': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }

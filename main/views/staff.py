@@ -20,7 +20,10 @@ from django.utils import timezone
 
 from django.contrib.auth.models import Group
 
-from main.auth import StaffRequiredMixin, TeamUserRole, TeamRole, sync_team_role_groups, cascade_is_staff
+from main.auth import (
+    StaffRequiredMixin, ExecutiveManagerRequiredMixin,
+    TeamUserRole, TeamRole, sync_team_role_groups, cascade_is_staff,
+)
 from main.auth.forms import StaffUserForm, TeamRoleAssignmentFormSet
 from main.models.users import User
 from util.mail import send_mail
@@ -47,12 +50,12 @@ def _send_activation_email(user):
 
     otp = _generate_otp()
     user.otp_code = otp
-    user.otp_expires_at = timezone.now() + timedelta(hours=24)
+    user.otp_expires_at = timezone.now() + timedelta(hours=48)
     user.save()
     send_mail(user.email, str(user.validation_id), "staff_account_otp", OTP=otp)
 
 
-class StaffUserListView(StaffRequiredMixin, View):
+class StaffUserListView(ExecutiveManagerRequiredMixin, View):
     def get(self, request):
         query = request.GET.get('q', '').strip()
         sort_by = request.GET.get('sort', 'name')
@@ -94,7 +97,7 @@ class StaffUserListView(StaffRequiredMixin, View):
         })
 
 
-class StaffUserCreateView(StaffRequiredMixin, View):
+class StaffUserCreateView(ExecutiveManagerRequiredMixin, View):
     def get(self, request):
         form = StaffUserForm()
         role_formset = TeamRoleAssignmentFormSet(instance=User())
@@ -140,7 +143,7 @@ class StaffUserCreateView(StaffRequiredMixin, View):
         })
 
 
-class StaffUserSendValidationEmailView(StaffRequiredMixin, View):
+class StaffUserSendValidationEmailView(ExecutiveManagerRequiredMixin, View):
     def post(self, request, pk):
         sys_user = get_object_or_404(User, pk=pk)
 
@@ -161,7 +164,7 @@ class StaffUserSendValidationEmailView(StaffRequiredMixin, View):
         return redirect('staff_user_edit', pk=sys_user.id)
 
 
-class StaffUserEditView(StaffRequiredMixin, View):
+class StaffUserEditView(ExecutiveManagerRequiredMixin, View):
     def get(self, request, pk):
         sys_user = get_object_or_404(User, pk=pk)
         form = StaffUserForm(instance=sys_user)
@@ -196,7 +199,7 @@ class StaffUserEditView(StaffRequiredMixin, View):
         })
 
 
-class StaffUserSendResetPasswordView(StaffRequiredMixin, View):
+class StaffUserSendResetPasswordView(ExecutiveManagerRequiredMixin, View):
     def post(self, request, pk):
         sys_user = get_object_or_404(User, pk=pk)
         sys_user.prt = uuid.uuid4()
@@ -213,7 +216,7 @@ class StaffUserSendResetPasswordView(StaffRequiredMixin, View):
         return redirect('staff_user_edit', pk=sys_user.id)
 
 
-class StaffUserDeleteView(StaffRequiredMixin, View):
+class StaffUserDeleteView(ExecutiveManagerRequiredMixin, View):
     def post(self, request, pk):
         sys_user = get_object_or_404(User, pk=pk)
 

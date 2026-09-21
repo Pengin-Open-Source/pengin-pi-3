@@ -1,0 +1,56 @@
+# Optional standalone reverse-proxy overlay for the release-candidate
+# installers (deploy_fedora.sh / deploy_debian_ubuntu.sh / deploy_mac.sh).
+#
+# docker-compose.yml's `nginx` service expects an already-running,
+# externally-managed Traefik attached to an external `root_proxy` network
+# (see install_readme.md) - that's the right shape for a host that's
+# already fronting several projects with its own shared Traefik, like the
+# project's own production hosts. A first-time self-hoster standing up a
+# single box has no such thing yet, so this file stands up a minimal
+# Traefik that owns that network and gets Let's Encrypt certs for you.
+#
+# Usage (handled by deploy.sh):
+#   docker compose -f docker-compose.traefik.yml up -d   # once, creates root_proxy
+#   docker compose up --build -d                         # the app stack, attaches to it
+#
+# If you already run your own Traefik/reverse proxy on this host, skip
+# this file entirely - deploy.sh asks, and will just make sure the
+# `root_proxy` network exists for the app stack to attach to.
+
+services:
+  traefik:
+    image: traefik:v3.1
+    container_name: pengin-pi-3-traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=root_proxy"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Plain HTTP is only for the ACME challenge - everything else
+      # redirects to HTTPS.
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - root_proxy
+
+volumes:
+  traefik_letsencrypt:
+
+networks:
+  # Owned here (not external) - this is what creates the network that
+  # docker-compose.yml's `proxy: {external: true, name: root_proxy}`
+  # then attaches to.
+  root_proxy:
+    name: root_proxy

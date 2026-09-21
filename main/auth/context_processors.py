@@ -17,5 +17,5 @@ def auth_context(request):
     )
     return {
         'user_team_roles': team_roles,
-        'user_display_title': "Administrator" if is_root(request.user) else display_title_for_user(request.user),
+        'user_display_title': "admin" if is_root(request.user) else display_title_for_user(request.user),
     }

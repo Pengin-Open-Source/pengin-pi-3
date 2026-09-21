@@ -2,11 +2,11 @@
 # The central RBAC model for the whole project: Group = department (Sales,
 # Engineering, Executives, etc. - seed your own via
 # `manage.py seed_departments`), TeamRole = a title/position within one
-# department (Employee, Manager, ...), TeamUserRole = the user<->title
+# department (Volunteer, Manager, ...), TeamUserRole = the user<->title
 # join. "Administrator" is deliberately NOT a TeamRole - it means
-# User.is_superuser (real Django root) - and an "Executives" department is
-# a cross-department evaluator, not root - see main/auth/permissions.py
-# for both. Registered under the 'main' app (via main/models/__init__.py)
+# User.is_superuser (real Django root) - see main/auth/permissions.py for
+# that, and for the two named departments that carry site-wide authority
+# instead of being scoped to their own roster. Registered under the 'main' app (via main/models/__init__.py)
 # so migrations live in main/migrations/ - there's no separate app here.
 import uuid
 from django.db import models
@@ -32,6 +32,22 @@ class TeamRole(HistoryMixin, models.Model):
         default=False,
         help_text="Manager-tier title for this department - grants department-wide "
                    "authority to anyone holding it. See main/auth/permissions.py.")
+
+    is_forum_moderator_role = models.BooleanField(
+        default=False,
+        help_text="Forum-moderator title for this department - grants CRUD-on-posts and "
+                   "ban authority over this department's own forum thread (or, for the two "
+                   "site-wide departments, every forum thread on the site). Independent of "
+                   "is_manager_role - moderating a forum and managing a department's roster "
+                   "are separate authorities that don't have to be held by the same title. "
+                   "See main/auth/permissions.py.")
+
+    is_blog_author_role = models.BooleanField(
+        default=False,
+        help_text="Blogger title - grants CRUD authority over every blog post on the site "
+                   "(there's only one Blogs app, not one per department, so this flag isn't "
+                   "scoped to a specific department the way is_forum_moderator_role is). "
+                   "See main/auth/permissions.py.")
 
     class Meta:
         verbose_name = "Team Role"

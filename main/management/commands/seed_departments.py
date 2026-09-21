@@ -10,8 +10,8 @@ from django.core.management.base import BaseCommand
 
 from main.auth.models import TeamRole
 
-DEPARTMENTS = ["Sales", "Support", "Engineering", "Executives"]
-STANDARD_TITLES = ["Employee", "Manager"]
+DEPARTMENTS = ["Sales", "Support", "Engineering", "Tobu Pengin, L.L.C.", "Independent Contributor - Volunteer"]
+STANDARD_TITLES = ["Volunteer", "Manager"]
 
 
 class Command(BaseCommand):

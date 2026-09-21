@@ -46,7 +46,7 @@ By default `main/settings.py` falls back to a local SQLite database if no `DB_*`
 
 ## Docker deployment
 
-See `install_readme.md` for the full Docker Compose deployment guide.
+On a fresh Fedora, Debian/Ubuntu (WSL2 included), or macOS box, run `sudo ./deploy_fedora.sh`, `sudo ./deploy_debian_ubuntu.sh`, or `./deploy_mac.sh` respectively - see `install_readme.md` for what they do and the full manual Docker Compose deployment guide. There's no Windows script; use WSL2 with `deploy_debian_ubuntu.sh` there instead.
 
 ## License
 

@@ -1,0 +1,68 @@
+{% extends "layouts/table-list.html" %}
+
+{% block middle_article %}
+{% for dept in departments %}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3 p-md-4">
+            <h2 class="h5 fw-bold text-secondary mb-3">
+                <i class="fas fa-building me-2 text-muted"></i>{{ dept.group.name }}
+            </h2>
+
+            <div class="table-responsive rounded border mb-3">
+                <table class="table table-sm table-hover align-middle mb-0 text-start">
+                    <thead class="table-light text-uppercase small">
+                        <tr>
+                            <th scope="col" class="py-2 px-3">Member</th>
+                            <th scope="col" class="py-2 px-3">Title</th>
+                            <th scope="col" class="py-2 px-3 text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in dept.members %}
+                            <tr>
+                                <td class="py-2 px-3">{{ member.user.name|default:member.user.email }}</td>
+                                <td class="py-2 px-3 text-muted">{{ member.role.name }}</td>
+                                <td class="py-2 px-3 text-end">
+                                    <form method="POST" action="{% url 'my_team_remove' pk=member.id %}"
+                                          onsubmit="return confirm('Remove {{ member.user.email }} from {{ dept.group.name }}?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="3" class="py-3 text-center text-muted">No members yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <form method="POST" action="{% url 'my_team' %}" class="row g-2 align-items-end">
+                {% csrf_token %}
+                <input type="hidden" name="group_id" value="{{ dept.group.id }}">
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-secondary mb-1">Add existing user by email</label>
+                    <input type="email" name="email" class="form-control" placeholder="person@example.com" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-secondary mb-1">Title</label>
+                    <select name="role_id" class="form-select" required>
+                        {% for title in dept.titles %}
+                            <option value="{{ title.id }}">{{ title.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                        <i class="fas fa-user-plus me-1"></i> Add
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% empty %}
+    <p class="text-muted text-center py-4 mb-0">You don't manage any department.</p>
+{% endfor %}
+{% endblock %}

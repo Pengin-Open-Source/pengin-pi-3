@@ -1,0 +1,42 @@
+{% extends "layouts/centered-card-form.html" %}
+
+{% block top_left %}
+    <a href="{{ base_slug.get_absolute_url|default:'/' }}" class="btn btn-outline-secondary btn-sm me-3">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <h1 class="h3 fw-bold text-secondary m-0">
+        {% if mode == "root" %}Start a New Wiki{% else %}New Page{% endif %}
+    </h1>
+{% endblock %}
+
+{% block middle_article %}
+    {% if mode == "root" %}
+        {% if base_slug %}
+            <p class="text-muted small">This will create a new page under <strong>{{ base_display_name|title }}</strong> and make it the root of its own wiki.</p>
+        {% else %}
+            <p class="text-muted small">This will create a new top-level page at the site root and make it the root of its own wiki.</p>
+        {% endif %}
+    {% else %}
+        <p class="text-muted small">This will create a new page under <strong>{{ base_display_name|default:base_slug.name|title }}</strong> in the <strong>{{ base_wiki_root_display_name|default:base_slug.wiki_root.name|title }}</strong> wiki.</p>
+    {% endif %}
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary mb-1">Page Name</label>
+            <input type="text" name="name" class="form-control" value="{{ initial_name|default:'' }}" required autofocus>
+        </div>
+        <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary mb-1">Article (Markdown)</label>
+            <textarea name="wiki_body" class="form-control" rows="14" placeholder="# {{ initial_name|default:'Page Title' }}&#10;&#10;Write the article here. Link to another page with [[Page Name]] or [[Page Name|custom text]]."></textarea>
+            <div class="form-text text-muted small">Supports standard markdown, plus <code>[[Page Name]]</code> wiki-links within this wiki.</div>
+        </div>
+        <button class="btn btn-primary px-4 shadow-sm fw-semibold mt-2" type="submit">
+            <i class="fas fa-save me-1"></i> Create Page
+        </button>
+    </form>
+{% endblock %}
