@@ -129,6 +129,7 @@ TEMPLATES = [
                 'util.context_processors.recaptcha_context',
                 'main.auth.context_processors.auth_context',
                 'main.context_processors.site_context',
+                'main.context_processors.navigation_context',
             ],
         },
     },

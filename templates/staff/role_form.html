@@ -1,0 +1,39 @@
+{% extends "layouts/centered-card-form.html" %}
+
+{% block top_left %}
+<a href="{% url 'staff_role_list' %}" class="btn btn-outline-secondary btn-sm me-3">
+    <i class="fas fa-arrow-left"></i>
+</a>
+<h1 class="h3 fw-bold text-secondary m-0">{{ primary_title }}</h1>
+{% endblock %}
+
+{% block middle_article %}
+<p class="text-muted small mb-4">
+    <i class="fas fa-building me-1"></i> {{ department.name }}
+</p>
+<form method="POST">
+    {% csrf_token %}
+    {% for field in form %}
+        <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary mb-1">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors }}</div>{% endif %}
+        </div>
+    {% endfor %}
+    <button class="btn btn-primary px-4 shadow-sm fw-semibold mt-2" type="submit">
+        <i class="fas fa-save me-1"></i> Save
+    </button>
+</form>
+
+{% if role %}
+    <hr class="my-4">
+    <form method="POST" action="{% url 'staff_role_delete' pk=role.id %}"
+          onsubmit="return confirm('Delete the {{ role.name }} title? This cannot be undone.');">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger btn-sm" type="submit">
+            <i class="fas fa-trash me-1"></i> Delete Title
+        </button>
+    </form>
+{% endif %}
+{% endblock %}

@@ -70,6 +70,10 @@ class SlugView(RateLimitedPostMixin, SuperTemplateView):
         if not current_slug:
             return self.handle_missing_slug(request)
 
+        if current_slug.is_wiki_page:
+            from .wiki import render_wiki_page
+            return render_wiki_page(request, current_slug)
+
         # Base context provided to templates
         context = {
             "title": current_slug.name,

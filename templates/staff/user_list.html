@@ -64,9 +64,19 @@
                         {% if not sys_user.is_active %}<span class="badge bg-danger">Inactive</span>{% endif %}
                     </td>
                     <td class="py-3 px-3 text-end">
-                        <a href="{% url 'staff_user_edit' pk=sys_user.id %}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-pen me-1"></i> Edit
-                        </a>
+                        <div class="d-flex gap-1 justify-content-end">
+                            <a href="{% url 'staff_user_edit' pk=sys_user.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-pen me-1"></i> Edit
+                            </a>
+                            {% if sys_user != request.user %}
+                                <form method="POST" action="{% url 'staff_user_delete' pk=sys_user.id %}" onsubmit="return confirm('Delete {{ sys_user.email }}? This cannot be undone.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% empty %}

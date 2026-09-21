@@ -1,0 +1,159 @@
+{% extends "layouts/two-col_article-left_sidebar-right.html" %}
+{% block page_title %}
+  <title>{{ wiki_root_display_name|title }} Wiki - {{ display_name|title|escape }}</title>
+{% endblock %}
+
+{% block left_col %}
+    <style>
+        /* Classic wiki-link styling: a resolved link gets a plain
+           dotted underline, a missing/red link is visually distinct
+           (dashed, danger-toned) so it's obvious at a glance which
+           [[Page Name]] links point somewhere real. */
+        .wiki-article .wiki-link {
+            color: #0d6efd;
+            text-decoration: none;
+            border-bottom: 1px dotted rgba(13, 110, 253, .45);
+        }
+        .wiki-article .wiki-link:hover {
+            border-bottom-style: solid;
+        }
+        .wiki-article .wiki-link-missing {
+            color: #b02a37;
+            border-bottom: 1px dashed rgba(176, 42, 55, .55);
+        }
+        .wiki-article .wiki-link-missing:hover {
+            border-bottom-style: solid;
+        }
+        .wiki-article .wiki-link-unresolved {
+            color: inherit;
+            border-bottom: 1px dotted rgba(0, 0, 0, .25);
+        }
+    </style>
+
+    <!-- Wiki link tree: title + ancestor links up to the wiki root - the
+         one page header (page name shown as the active crumb), Edit lives
+         on this same row rather than duplicated as a second, larger
+         heading inside the article card below. -->
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <nav aria-label="breadcrumb" class="flex-grow-1">
+            <ol class="breadcrumb bg-white border rounded px-3 py-2 shadow-sm mb-0">
+                {% for crumb, crumb_display_name in breadcrumb %}
+                    {% if forloop.last %}
+                        <li class="breadcrumb-item active fw-bold text-secondary" aria-current="page">{{ crumb_display_name|title }}</li>
+                    {% else %}
+                        <li class="breadcrumb-item"><a href="{{ crumb.get_absolute_url }}" class="text-decoration-none">{{ crumb_display_name|title }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ol>
+        </nav>
+        {% if is_admin %}
+            <a href="{{ slug.get_absolute_url }}edit/" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-pen me-1"></i> Edit
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="wiki-article">
+                {{ article_html|safe }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block right_col %}
+    {% if toc %}
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-3">
+                <h3 class="h6 fw-bold text-secondary mb-2">Contents</h3>
+                <ul class="list-unstyled mb-0 small">
+                    {% for entry in toc %}
+                        <li class="mb-1" style="margin-left: {{ entry.level|add:"-1" }}rem;">
+                            <a href="#{{ entry.anchor }}" class="text-decoration-none text-muted">{{ entry.text }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if is_admin %}
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-3">
+                <a href="{{ slug.get_absolute_url }}create/" class="btn btn-primary btn-sm w-100">
+                    <i class="fas fa-plus me-1"></i> New Page Here
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3">
+            <h3 class="h6 fw-bold text-secondary mb-2">Pages Here</h3>
+            {% if child_pages %}
+                <ul class="list-unstyled mb-0 small">
+                    {% for child, child_display_name in child_pages %}
+                        <li class="mb-1">
+                            <a href="{{ child.get_absolute_url }}" class="text-decoration-none">
+                                <i class="fas fa-file-alt me-1 text-muted"></i>{{ child_display_name|title }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted small mb-0">No sub-pages yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3">
+            <h3 class="h6 fw-bold text-secondary mb-2">Page Info</h3>
+            <p class="text-muted small mb-1"><i class="fas fa-book me-1"></i> Wiki: {{ wiki_root_display_name|title }}</p>
+            {% if last_edit %}
+                <p class="text-muted small mb-0">
+                    <i class="fas fa-history me-1"></i>
+                    Last edited on {{ last_edit.changed_at|date:"M j, Y" }}
+                    by {{ last_edit.user.name|default:last_edit.user.email|default:"someone" }}
+                </p>
+            {% elif slug.author %}
+                <p class="text-muted small mb-0">
+                    <i class="fas fa-clock me-1"></i>
+                    Created on {{ slug.date|date:"M j, Y" }} by {{ slug.author.name|default:slug.author.email }}
+                </p>
+            {% else %}
+                <p class="text-muted small mb-0"><i class="fas fa-clock me-1"></i> Created {{ slug.date|date:"M j, Y" }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3">
+            <h3 class="h6 fw-bold text-secondary mb-2">Maintainers</h3>
+            {% if maintainers %}
+                <table class="table table-sm table-borderless mb-0 small">
+                    <thead>
+                        <tr class="text-muted text-uppercase" style="font-size: .7rem;">
+                            <th scope="col">Editor</th>
+                            <th scope="col" class="text-end">Last Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for maintainer in maintainers %}
+                            <tr>
+                                <td>
+                                    {{ maintainer.user.name|default:maintainer.user.email }}
+                                    {% if maintainer.is_creator %}<span class="badge bg-light text-muted border ms-1" style="font-size:.65rem;">creator</span>{% endif %}
+                                </td>
+                                <td class="text-end text-muted">{{ maintainer.last_activity|date:"M j, Y" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted small mb-0">No maintainers on record yet.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

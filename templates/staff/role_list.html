@@ -1,0 +1,104 @@
+{% extends "layouts/table-list.html" %}
+
+{% block top_right %}
+{% if can_manage_departments %}
+<a href="{% url 'staff_department_create' %}" class="btn btn-primary fw-semibold shadow-sm">
+    <i class="fas fa-building me-1"></i> New Department
+</a>
+{% endif %}
+{% endblock %}
+
+{% block middle_article %}
+{% for department in departments %}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                <h2 class="h5 fw-bold text-secondary mb-0">
+                    <i class="fas fa-building me-2 text-muted"></i>{{ department.name }}
+                </h2>
+                <div class="d-flex gap-2">
+                    {% if department.user_can_manage %}
+                        <a href="{% url 'staff_role_create' group_id=department.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i> New Title
+                        </a>
+                    {% endif %}
+                    {% if can_manage_departments %}
+                        <a href="{% url 'staff_department_edit' pk=department.id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-pen me-1"></i> Rename
+                        </a>
+                        <form method="POST" action="{% url 'staff_department_delete' pk=department.id %}"
+                              onsubmit="return confirm('Delete the {{ department.name }} department? This also removes every title in it. This cannot be undone.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% with titles=department.team_roles.all %}
+                {% if titles %}
+                    <div class="table-responsive rounded border">
+                        <table class="table table-sm table-hover align-middle mb-0 text-start">
+                            <thead class="table-light text-uppercase small">
+                                <tr>
+                                    <th scope="col" class="py-2 px-3">Title</th>
+                                    <th scope="col" class="py-2 px-3">Members</th>
+                                    <th scope="col" class="py-2 px-3">Tier</th>
+                                    <th scope="col" class="py-2 px-3 text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for role in titles %}
+                                    <tr>
+                                        <td class="py-2 px-3 fw-semibold">{{ role.name }}</td>
+                                        <td class="py-2 px-3 text-muted">{{ role.assigned_users.count }}</td>
+                                        <td class="py-2 px-3">
+                                            {% if role.is_manager_role %}
+                                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">Manager</span>
+                                            {% endif %}
+                                            {% if role.is_forum_moderator_role %}
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Forum Moderator</span>
+                                            {% endif %}
+                                            {% if role.is_blog_author_role %}
+                                                <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Blogger</span>
+                                            {% endif %}
+                                            {% if not role.is_manager_role and not role.is_forum_moderator_role and not role.is_blog_author_role %}
+                                                <span class="text-muted small">Member</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-2 px-3 text-end">
+                                            {% if department.user_can_manage %}
+                                                <div class="d-flex gap-1 justify-content-end">
+                                                    <a href="{% url 'staff_role_edit' pk=role.id %}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-pen"></i>
+                                                    </a>
+                                                    <form method="POST" action="{% url 'staff_role_delete' pk=role.id %}"
+                                                          onsubmit="return confirm('Delete the {{ role.name }} title? This cannot be undone.');">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">No titles yet in this department.</p>
+                {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+{% empty %}
+    <p class="text-muted text-center py-4 mb-0">
+        No departments yet.
+        {% if can_manage_departments %}Create one to start defining titles.{% endif %}
+    </p>
+{% endfor %}
+{% endblock %}
