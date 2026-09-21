@@ -17,6 +17,14 @@
     </div>
 
     <div class="col-12">
+        <label for="{{ form.meta_description.id_for_label }}" class="form-label small fw-bold text-secondary mb-1">
+            SEO Description
+        </label>
+        {{ form.meta_description }}
+        <div class="form-text text-muted small">How this post appears in search results. Leave blank to use a truncated excerpt of the content instead.</div>
+    </div>
+
+    <div class="col-12">
         <label for="{{ form.content.id_for_label }}" class="form-label small fw-bold text-secondary mb-1">
             Article Content <span class="text-danger">*</span>
         </label>

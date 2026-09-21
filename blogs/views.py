@@ -1,13 +1,13 @@
 # blogs/views.py
 # Reading is public (no login required); creating/editing/deleting is
-# gated to staff via main.auth.is_admin_required/is_admin_provider - same
-# convention as about/home/products/jobs. tobuwebprod gated this to a
-# "Marketing department" (teams.permissions.can_manage_blog), but that
-# department-specific RBAC concept was deliberately left out of
-# main.auth during the earlier auth-consolidation phase (no such app/
-# concept exists in this generic starter), so plain staff gating is used
-# here instead - a real department-scoped gate can be layered on top of
-# main.auth's TeamRole framework later if a specific deployment wants one.
+# gated to main.auth.can_manage_blog(user) - root, or anyone holding a
+# Blogger title (TeamRole.is_blog_author_role). That flag is generic
+# (not scoped to a specific department, unlike is_forum_moderator_role -
+# there's only one Blogs app, not one per department), replacing the
+# plain is_admin_required (is_staff) gate this app used before
+# TeamRole.is_blog_author_role existed in main.auth. tobuwebprod's own
+# gate was hardcoded to a "Marketing department" TeamUserRole, which
+# doesn't generalize the same way.
 import json
 from datetime import datetime
 from django.apps import apps
@@ -15,11 +15,11 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
-from django.utils.decorators import method_decorator
+from django.http import HttpResponseForbidden
 from django.db.models import Q
 from werkzeug.utils import secure_filename
 
-from main.auth import is_admin_required
+from main.auth import can_manage_blog
 from main.models import Event
 from util.paginate import paginate
 from util.file import get_file_handler
@@ -27,6 +27,13 @@ from .models import BlogPost
 from .forms import BlogForm
 
 conn = get_file_handler()
+
+
+class BlogManagerRequiredMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if not can_manage_blog(request.user):
+            return HttpResponseForbidden("<h1>You don't have permission to manage blog posts.</h1>")
+        return super().dispatch(request, *args, **kwargs)
 
 
 def handle_blog_event_sync(blog_post, form, user):
@@ -167,7 +174,7 @@ class BlogsListView(ListView):
             [d.strftime('%Y-%m-%d') for d in post_dates if d]
         )
 
-        context['is_admin'] = self.request.user.is_authenticated and self.request.user.is_staff
+        context['is_admin'] = can_manage_blog(self.request.user)
         context['primary_title'] = 'Blog'
         return context
 
@@ -190,10 +197,10 @@ class BlogPostDetailView(DetailView):
             except Exception:
                 file_url = None
 
-        is_admin = user.is_authenticated and user.is_staff
+        can_manage = can_manage_blog(user)
         context['file_url'] = file_url
-        context['can_edit'] = is_admin
-        context['is_admin'] = is_admin
+        context['can_edit'] = can_manage
+        context['is_admin'] = can_manage
         context['primary_title'] = post.title
         # events isn't a dependency of this branch (only main.Event is) - the
         # "Add to Calendar" ICS link only makes sense if the calendar app
@@ -202,8 +209,7 @@ class BlogPostDetailView(DetailView):
         return context
 
 
-@method_decorator(is_admin_required, name='dispatch')
-class BlogPostCreateView(CreateView):
+class BlogPostCreateView(BlogManagerRequiredMixin, CreateView):
     model = BlogPost
     form_class = BlogForm
     template_name = 'blogs_create.html'
@@ -221,8 +227,7 @@ class BlogPostCreateView(CreateView):
         return redirect('blogs:blog_post', pk=blog_post.pk)
 
 
-@method_decorator(is_admin_required, name='dispatch')
-class BlogPostEditView(UpdateView):
+class BlogPostEditView(BlogManagerRequiredMixin, UpdateView):
     model = BlogPost
     form_class = BlogForm
     template_name = 'edit_blog_post.html'
@@ -237,8 +242,7 @@ class BlogPostEditView(UpdateView):
         return redirect('blogs:blog_post', pk=blog_post.pk)
 
 
-@method_decorator(is_admin_required, name='dispatch')
-class BlogPostDeleteView(DeleteView):
+class BlogPostDeleteView(BlogManagerRequiredMixin, DeleteView):
     model = BlogPost
     success_url = reverse_lazy('blogs:blogs')
 

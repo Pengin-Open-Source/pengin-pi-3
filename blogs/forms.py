@@ -31,11 +31,15 @@ class BlogForm(forms.ModelForm):
 
     class Meta:
         model = BlogPost
-        fields = ['title', 'tags', 'content', 'file_name', 'is_event']
+        fields = ['title', 'tags', 'meta_description', 'content', 'file_name', 'is_event']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter post title...'}),
             'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 8, 'placeholder': 'Type content here...'}),
             'tags': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Announcements, Product Updates'}),
+            'meta_description': forms.Textarea(attrs={
+                'class': 'form-control', 'rows': 2, 'maxlength': 300,
+                'placeholder': 'How this post should appear in search engine results (max 300 characters)...'
+            }),
         }
 
     def __init__(self, *args, **kwargs):

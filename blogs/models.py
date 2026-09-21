@@ -19,6 +19,11 @@ class BlogPost(SitemapEntry, HistoryMixin, models.Model):
     date = models.DateTimeField(default=timezone.now)
     content = models.TextField(blank=True)
     tags = models.CharField(max_length=150, blank=True)
+    meta_description = models.CharField(
+        max_length=300,
+        blank=True,
+        help_text="Public-facing SEO description (<meta name=\"description\">). Falls back to a truncated excerpt of the content if left blank."
+    )
 
     # File Attachment
     file = models.CharField(max_length=255, blank=True, null=True, help_text="Stored FileIO/S3 key")

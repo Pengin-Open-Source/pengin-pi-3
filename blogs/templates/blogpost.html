@@ -5,6 +5,21 @@
 {# Comment" form (no POST handler existed for it) and a non-functional      #}
 {# newsletter signup - both dropped rather than ported as fake UI. #}
 {% extends "layouts/two-col_article-left_sidebar-right.html" %}
+{% load markdownit %}
+
+{% block meta_description %}
+  {% if post.meta_description %}
+      <meta name="description" content="{{ post.meta_description|escape }}">
+  {% else %}
+      <meta name="description" content="{{ post.content|markdownit|striptags|truncatewords:30|escape }}">
+  {% endif %}
+{% endblock %}
+
+{% block tags %}
+  {% if post.tags %}
+      <meta name="keywords" content="{{ post.tags|escape }}">
+  {% endif %}
+{% endblock %}
 
 {% block middle_article %}
     <h1 class="h2 fw-bold text-secondary mb-3">{{ post.title }}</h1>
@@ -38,7 +53,7 @@
     {% endif %}
 
     <div class="lh-lg text-secondary">
-        {{ post.content|safe }}
+        {{ post.content|markdownit|safe }}
     </div>
 
     {% if post.tags %}

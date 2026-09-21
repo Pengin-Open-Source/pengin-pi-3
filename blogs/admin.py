@@ -37,7 +37,7 @@ class BlogPostAdmin(admin.ModelAdmin):
             'fields': ('title',)
         }),
         ('Content & Classification', {
-            'fields': ('content', 'tags')
+            'fields': ('content', 'tags', 'meta_description')
         }),
         ('Attachment', {
             'fields': ('file', 'file_name'),
