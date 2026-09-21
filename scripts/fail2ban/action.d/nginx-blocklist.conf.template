@@ -1,0 +1,9 @@
+[Definition]
+# Writes/removes a "deny <ip>;" line in the app's own nginx_blocklist.conf
+# (see nginx.conf's `include .../blocklist.conf` and
+# util/middleware/blocklist.py) and reloads the project's nginx container
+# so the edge and the app agree on who's banned, on top of the iptables
+# ban this action is paired with. {{INSTALL_DIR}} and {{NGINX_CONTAINER}}
+# are substituted by scripts/lib/common.sh at install time.
+actionban = echo "deny <ip>;" >> {{INSTALL_DIR}}/nginx_blocklist.conf && docker exec {{NGINX_CONTAINER}} nginx -s reload
+actionunban = sed -i '/deny <ip>;/d' {{INSTALL_DIR}}/nginx_blocklist.conf && docker exec {{NGINX_CONTAINER}} nginx -s reload

@@ -1,0 +1,92 @@
+# Pengin Pi 3 baseline fail2ban profile.
+#
+# Adapted from the profile running on the project's own community server
+# (POSweb) for this release - the same jail/filter shapes, with that
+# host's specific trusted-IP allowlist and banned-IP history stripped
+# out, since neither belongs in a public release. One change from the
+# source profile: POSweb's standalone [permanent-ban] jail had no
+# logpath configured (dead - it never matched anything), so instead of
+# copying it verbatim, its intent (permanently-banned IPs also get
+# written into the app's own nginx_blocklist.conf, per the middleware
+# described in README.md) is folded into the [recidive-perm] jail below,
+# which is the one that actually fires.
+#
+# {{INSTALL_DIR}} and {{NGINX_CONTAINER}} are substituted by
+# scripts/lib/common.sh's install_fail2ban_profile() at install time.
+#
+# This file is only written if /etc/fail2ban/jail.local doesn't already
+# exist, so re-running the installer never clobbers local tuning.
+
+[DEFAULT]
+# Always trust localhost. Add your own admin/office IPs here so you don't
+# get banned by your own testing.
+ignoreip = 127.0.0.1/8 ::1
+
+# Ban via the DOCKER-USER iptables chain so bans actually apply to
+# container-bound traffic (the default iptables backend runs too late to
+# affect Docker's own DNAT/forwarding rules).
+banaction = iptables-multiport[chain="DOCKER-USER"]
+banaction_allports = iptables-allports[chain="DOCKER-USER"]
+
+[nginx-404]
+enabled  = true
+port     = http,https
+filter   = nginx-404
+logpath  = {{INSTALL_DIR}}/logs/nginx/access.log
+findtime = 60
+maxretry = 30
+bantime  = 86400
+action   = iptables-multiport[name=nginx-404, port="http,https", protocol=tcp, chain="DOCKER-USER"]
+
+[nginx-403]
+enabled  = true
+port     = http,https
+filter   = nginx-403
+logpath  = {{INSTALL_DIR}}/logs/nginx/access.log
+findtime = 60
+maxretry = 15
+bantime  = 86400
+action   = iptables-multiport[name=nginx-403, port="http,https", protocol=tcp, chain="DOCKER-USER"]
+
+[nginx-dos]
+enabled  = true
+port     = http,https
+filter   = nginx-dos
+logpath  = {{INSTALL_DIR}}/logs/nginx/access.log
+findtime = 2
+maxretry = 10
+bantime  = 172800
+action   = iptables-multiport[name=nginx-dos, port="http,https", protocol=tcp, chain="DOCKER-USER"]
+
+[nginx-scanners]
+enabled  = true
+port     = http,https
+filter   = nginx-scanners
+# Catches the 404/429/444s nginx.conf's own scanner/hidden-file/CMS-probe
+# blocking rules already generate - this is what actually gets an IP
+# banned for tripping those, not just logged.
+logpath  = {{INSTALL_DIR}}/logs/nginx/access.log
+findtime = 60
+maxretry = 15
+bantime  = 86400
+action   = iptables-multiport[name=nginx-scanners, port="http,https", protocol=tcp, chain="DOCKER-USER"]
+
+[recidive]
+enabled   = true
+filter    = recidive
+logpath   = /var/log/fail2ban.log
+banaction = iptables-allports[chain="DOCKER-USER"]
+findtime  = 86400
+maxretry  = 2
+bantime   = 3024000
+
+[recidive-perm]
+enabled   = true
+filter    = recidive-perm
+logpath   = /var/log/fail2ban.log
+banaction = iptables-allports[chain="DOCKER-USER"]
+findtime  = 7776000
+maxretry  = 2
+bantime   = -1
+action    = iptables-allports[name=recidive-perm, chain="DOCKER-USER"]
+            nginx-blocklist
