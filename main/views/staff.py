@@ -50,7 +50,7 @@ def _send_activation_email(user):
 
     otp = _generate_otp()
     user.otp_code = otp
-    user.otp_expires_at = timezone.now() + timedelta(hours=24)
+    user.otp_expires_at = timezone.now() + timedelta(hours=48)
     user.save()
     send_mail(user.email, str(user.validation_id), "staff_account_otp", OTP=otp)
 

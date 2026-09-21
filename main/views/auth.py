@@ -33,6 +33,10 @@ class ValidateView(View):
             messages.error(request, "This validation link is invalid or has already been used.")
             return redirect('login')
 
+        if target_user.validation_date and timezone.now() > target_user.validation_date + timedelta(hours=48):
+            messages.error(request, "This validation link has expired. Please request a new one.")
+            return redirect('login')
+
         if not request.user.is_authenticated:
             messages.info(request, f"Please log in as {target_user.email} to validate your account.")
             login_url = reverse('login')
@@ -118,17 +122,17 @@ class SendEmailView(LoginRequiredMixin, View):
     def get(self, request):
         now = timezone.now()
         user = request.user
-        delta = user.validation_date + timedelta(minutes=5)
-        
+        delta = user.validation_date + timedelta(hours=48)
+
         if not user.validated and now > delta:
             user.validation_date = now
             user.validation_id = uuid.uuid4()
             user.save()
-            
+
             send_mail(user.email, str(user.validation_id), "user_validation")
             messages.info(request, "Validation email sent! Please check your inbox.")
         else:
-            messages.warning(request, "Please wait at least 5 minutes before requesting another email.")
+            messages.warning(request, "Please wait at least 48 hours before requesting another email.")
             
         return redirect('profile')
 
@@ -306,7 +310,7 @@ class PasswordResetView(RateLimitedPostMixin, RateLimitedGetMixin, RecaptchaRequ
             confirm_new_password = form.cleaned_data['confirm_new_password']
             user = User.objects.filter(email=email).first()
             if user and new_password == confirm_new_password:
-                if user.prt_reset_date and timezone.now() > user.prt_reset_date + timedelta(minutes=60):
+                if user.prt_reset_date and timezone.now() > user.prt_reset_date + timedelta(hours=48):
                     messages.error(request, 'Password reset token has expired.')
                 else:
                     user.save_history(user=user)
