@@ -19,12 +19,12 @@
 #                                    clicking a missing [[Wiki Link]].
 #   <path:base_path>/edit/         - edit an existing wiki page's name/body
 #                                    in place.
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.text import slugify
 from django.views import View
 
+from main.auth import StaffRequiredMixin
 from ..models import Slug
 from ..models.slug import SlugHistory
 from util.security.ratelimit import RateLimitedPostMixin
@@ -156,7 +156,10 @@ def _editors_for(slug):
     return last_edit, maintainers
 
 
-class WikiRootCreateView(LoginRequiredMixin, RateLimitedPostMixin, View):
+# All three wiki write views are staff-only (they used to need just a
+# login): any signed-in account could otherwise mint unlimited pages/URLs -
+# and every edit writes a SlugHistory row - enough to fill the server.
+class WikiRootCreateView(StaffRequiredMixin, RateLimitedPostMixin, View):
     """<path:base_path>/wiki/create/ - base_path must resolve to an
     existing Slug that ISN'T already part of a wiki; the new page becomes
     a child of it and the root of a brand new wiki tree.
@@ -216,7 +219,7 @@ class WikiRootCreateView(LoginRequiredMixin, RateLimitedPostMixin, View):
         return base_slug
 
 
-class WikiPageCreateView(LoginRequiredMixin, RateLimitedPostMixin, View):
+class WikiPageCreateView(StaffRequiredMixin, RateLimitedPostMixin, View):
     """<path:base_path>/create/ - base_path must resolve to an EXISTING
     wiki page (including a wiki root); the new page becomes its child,
     inheriting the same wiki_root."""
@@ -259,7 +262,7 @@ class WikiPageCreateView(LoginRequiredMixin, RateLimitedPostMixin, View):
         return slug
 
 
-class WikiPageEditView(LoginRequiredMixin, RateLimitedPostMixin, View):
+class WikiPageEditView(StaffRequiredMixin, RateLimitedPostMixin, View):
     """<path:base_path>/edit/ - edit an existing wiki page's name/body."""
     ratelimit_rate = "20/m"
 
