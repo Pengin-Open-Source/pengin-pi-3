@@ -39,7 +39,7 @@
       command: >
         sh -c "python manage.py collectstatic --noinput &&
               python manage.py migrate &&
-              uwsgi --http 0.0.0.0:8000 --module main.wsgi:application --master --processes 4 --threads 2"
+              uwsgi --http 0.0.0.0:8000 --module main.wsgi:application --master --processes 4 --threads 2 --buffer-size 32768"
       volumes:
         - ./media:/app/media:z
         - static_volume:/app/staticfiles
@@ -62,7 +62,7 @@
         - SES_SENDER_NAME=${SES_SENDER_NAME}
         - SES_SENDER=${SES_SENDER}
         - REDIS_URL=redis://redis:6379
-        - MONGODB_URI=mongodb://${DB_USER}:${DB_PASSWORD}@ferretdb:27017/
+        - MONGODB_URI=mongodb://ferretdb:27017/  # credentials: DB_USER/DB_PASSWORD, see util/ferretdb
         - MONGODB_DB_NAME=${DB_NAME}
       depends_on:
         postgres:
