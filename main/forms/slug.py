@@ -18,13 +18,18 @@ class SlugForm(forms.ModelForm):
         ]
 
         widgets = {
-            "meta_tags": forms.TextInput(attrs={"placeholder": "comma,separated,tags"}),
-            "meta_description": forms.Textarea(attrs={"rows": 2}),
-            "render_template": forms.Textarea(attrs={"rows": 12, "class": "monospace"}),
+            "parent": forms.Select(attrs={"class": "form-select"}),
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "meta_tags": forms.TextInput(attrs={"placeholder": "comma,separated,tags", "class": "form-control"}),
+            "meta_description": forms.Textarea(attrs={"rows": 2, "class": "form-control"}),
+            "template_name": forms.TextInput(attrs={"class": "form-control"}),
+            "render_template": forms.Textarea(attrs={"rows": 12, "class": "form-control monospace"}),
             # id="id_json" is Django's default id_for_label for this field
             # anyway - named explicitly since templates/slug/slug.html's
             # inline JSON-validation script hooks into it by id.
-            "json": forms.Textarea(attrs={"rows": 8, "class": "monospace", "id": "id_json"}),
+            "is_dynamic": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "requires_recaptcha": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "json": forms.Textarea(attrs={"rows": 8, "class": "form-control monospace", "id": "id_json"}),
         }
 
     # Model.clean() (see main/models/slug.py) already enforces "is_dynamic
@@ -46,3 +51,7 @@ class SlugChildMetaForm(forms.ModelForm):
     class Meta:
         model = Slug
         fields = ["name"]
+
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+        }
