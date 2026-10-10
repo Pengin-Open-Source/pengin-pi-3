@@ -33,7 +33,7 @@
             {% for num in page.paginator.page_range %}
                 {% if num == page.number %}
                     <li class="page-item active" aria-current="page">
-                        <span class="page-link text-white fw-bold border-0 px-3" style="background-color: #1A6C9B;">{{ num }}</span>
+                           <span class="page-link page-link-current text-white fw-bold border-0 px-3">{{ num }}</span>
                     </li>
                 {% else %}
                     <li class="page-item">
