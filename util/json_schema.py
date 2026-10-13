@@ -1,4 +1,6 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/json_schema.py
+#
 # Thin wrapper around the `jsonschema` library for the one thing Slug's
 # is_dynamic feature needs: confirming an admin-authored JSON document is
 # itself a structurally valid JSON Schema (not validating some other piece
@@ -6,6 +8,12 @@
 # form, via util/dynamic_forms.py). Kept as a single function rather than
 # spreading jsonschema calls across model/form code so the draft version
 # used is defined in exactly one place.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import jsonschema
 from jsonschema.validators import Draft202012Validator
 

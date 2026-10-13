@@ -1,4 +1,6 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/wiki_markdown.py
+#
 # A separate markdown-it-py instance for wiki article bodies, entirely
 # independent of markdownit's own plain `{{ text|markdownit }}` template
 # filter (main/models/slug.py's normal static-content rendering keeps using
@@ -13,6 +15,12 @@
 # fence handling for free: a `[[...]]`-shaped string inside a code span or
 # fenced code block is never seen by this rule at all, since backticks/
 # fences are consumed as their own tokens earlier in the same pass.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import re
 
 from django.utils.text import slugify

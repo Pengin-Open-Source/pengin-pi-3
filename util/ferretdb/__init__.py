@@ -1,3 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/ferretdb/__init__.py
+#
+# Connection helpers for FerretDB, the document store behind dynamic Slug data.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import threading
 from django.conf import settings
 from pymongo import MongoClient

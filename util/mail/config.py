@@ -1,3 +1,14 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/mail/config.py
+#
+# Builds the subject and body for each type of site email (activation,
+# validation, password reset, subscriptions).
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 from email.utils import formataddr
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText

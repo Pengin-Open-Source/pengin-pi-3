@@ -1,4 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/security/recaptcha.py
+#
+# reCAPTCHA v3 token verification and a mixin that requires it on POST.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import json
 import os
 import urllib.parse

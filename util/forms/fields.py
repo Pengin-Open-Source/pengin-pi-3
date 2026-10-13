@@ -1,3 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/forms/fields.py
+#
+# Shared form fields, such as a User choice field labeled by display name.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 from django import forms
 
 

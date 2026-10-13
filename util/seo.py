@@ -1,4 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/seo.py
+#
+# Builds schema.org JSON-LD data for pages that opt in to structured data.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 def build_organization_schema(site, description="", url=""):
     """
     Builds a schema.org ProfessionalService dict from a Site (or

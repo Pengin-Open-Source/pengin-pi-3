@@ -1,3 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/mail/__init__.py
+#
+# Entry point for sending site email through AWS SES.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import os
 import boto3
 from dotenv import load_dotenv

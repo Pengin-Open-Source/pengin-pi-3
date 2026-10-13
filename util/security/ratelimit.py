@@ -1,4 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/security/ratelimit.py
+#
+# View mixins that rate-limit POST and GET requests per client IP.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 from django.contrib import messages
 from django.shortcuts import redirect
 from django_ratelimit.core import is_ratelimited
