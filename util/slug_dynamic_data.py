@@ -1,4 +1,6 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/slug_dynamic_data.py
+#
 # Storage for the actual field values a dynamic Slug's generated form
 # collects - kept in FerretDB (via util.ferretdb.get_mongo_db()), not
 # Postgres. Deliberately separate from Slug.json, which already has three
@@ -25,6 +27,12 @@
 # orphaned. SlugDeleteView (main/views/slug.py) only cleans up the single
 # Slug it's given - deleting a parent's whole dynamic-data tree needs its
 # own cleanup pass, not yet built.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 from util.ferretdb import get_mongo_db
 
 COLLECTION_NAME = 'slug_dynamic_data'

@@ -1,4 +1,6 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/dynamic_forms.py
+#
 # Builds a plain Django Form class at request time from a JSON Schema
 # (validated as structurally sound by util/json_schema.py before it ever
 # gets here - this module assumes `schema` is already a valid JSON Schema
@@ -30,6 +32,12 @@
 # `format` as an open, implementation-defined annotation, so "textarea",
 # "image", and "file" are legitimate uses of it, not a violation of the
 # spec.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import datetime
 
 from django import forms

@@ -1,3 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/s3/__init__.py
+#
+# File storage on Amazon S3 via boto3.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import os
 import boto3
 # from app.util.log import log

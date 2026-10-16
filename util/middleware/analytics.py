@@ -1,4 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/middleware/analytics.py
+#
+# Middleware that logs successful GET page views to the cache for analytics.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import json
 from django.utils import timezone
 from django.core.cache import cache  # Or your project's redis client

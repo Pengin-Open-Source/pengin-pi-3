@@ -1,3 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/file/__init__.py
+#
+# File storage handlers: local disk or S3, chosen by get_file_handler().
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import os
 from pathlib import Path
 from uuid import uuid4 as id

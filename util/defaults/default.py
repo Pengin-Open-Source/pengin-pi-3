@@ -1,3 +1,14 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/defaults/default.py
+#
+# Empty placeholder objects used when a Site, Home or
+# About record doesn't exist yet.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 class Home:
     company_name = ""
     article = ""
