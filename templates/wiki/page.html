@@ -4,31 +4,6 @@
 {% endblock %}
 
 {% block left_col %}
-    <style>
-        /* Classic wiki-link styling: a resolved link gets a plain
-           dotted underline, a missing/red link is visually distinct
-           (dashed, danger-toned) so it's obvious at a glance which
-           [[Page Name]] links point somewhere real. */
-        .wiki-article .wiki-link {
-            color: #0d6efd;
-            text-decoration: none;
-            border-bottom: 1px dotted rgba(13, 110, 253, .45);
-        }
-        .wiki-article .wiki-link:hover {
-            border-bottom-style: solid;
-        }
-        .wiki-article .wiki-link-missing {
-            color: #b02a37;
-            border-bottom: 1px dashed rgba(176, 42, 55, .55);
-        }
-        .wiki-article .wiki-link-missing:hover {
-            border-bottom-style: solid;
-        }
-        .wiki-article .wiki-link-unresolved {
-            color: inherit;
-            border-bottom: 1px dotted rgba(0, 0, 0, .25);
-        }
-    </style>
 
     <!-- Wiki link tree: title + ancestor links up to the wiki root - the
          one page header (page name shown as the active crumb), Edit lives
@@ -69,7 +44,7 @@
                 <h3 class="h6 fw-bold text-secondary mb-2">Contents</h3>
                 <ul class="list-unstyled mb-0 small">
                     {% for entry in toc %}
-                        <li class="mb-1" style="margin-left: {{ entry.level|add:"-1" }}rem;">
+                        <li class="mb-1 toc-level-{{ entry.level }}">
                             <a href="#{{ entry.anchor }}" class="text-decoration-none text-muted">{{ entry.text }}</a>
                         </li>
                     {% endfor %}
@@ -134,7 +109,7 @@
             {% if maintainers %}
                 <table class="table table-sm table-borderless mb-0 small">
                     <thead>
-                        <tr class="text-muted text-uppercase" style="font-size: .7rem;">
+                        <tr class="text-muted text-uppercase wiki-maintainers-head">
                             <th scope="col">Editor</th>
                             <th scope="col" class="text-end">Last Activity</th>
                         </tr>
@@ -144,7 +119,7 @@
                             <tr>
                                 <td>
                                     {{ maintainer.user.name|default:maintainer.user.email }}
-                                    {% if maintainer.is_creator %}<span class="badge bg-light text-muted border ms-1" style="font-size:.65rem;">creator</span>{% endif %}
+                                    {% if maintainer.is_creator %}<span class="badge bg-light text-muted border ms-1 wiki-creator-badge">creator</span>{% endif %}
                                 </td>
                                 <td class="text-end text-muted">{{ maintainer.last_activity|date:"M j, Y" }}</td>
                             </tr>

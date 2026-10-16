@@ -1,3 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/macros_patch.py
+#
+# Monkeypatch for a reentrancy bug in the vendored django-macros package.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Monkeypatch for a reentrancy bug in the vendored django-macros package.
 
 django-macros' DefineMacroNode.render() (macros/templatetags/macros.py)

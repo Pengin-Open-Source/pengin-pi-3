@@ -1,7 +1,15 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/mixins.py
+#
 # Generic, non-auth view mixins. Auth/permission mixins live in
 # main/auth/mixins.py instead - this file is for reusable behavior that has
 # nothing to do with who the user is or what they're allowed to do.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import json
 import time
 

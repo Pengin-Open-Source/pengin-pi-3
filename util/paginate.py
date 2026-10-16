@@ -1,3 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/paginate.py
+#
+# Pagination helpers for Django querysets.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Count
 from math import ceil

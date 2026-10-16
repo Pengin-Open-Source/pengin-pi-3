@@ -1,4 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/utils.py
+#
+# Small shared helpers: a UUID-aware JSON encoder and a digits-only filter.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import re
 
 from django.core.serializers.json import DjangoJSONEncoder

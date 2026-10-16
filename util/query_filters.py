@@ -1,3 +1,13 @@
+# Pengin-Pi-3 — Pengin Open Source
+# util/query_filters.py
+#
+# Small, purpose-built query-filtering helpers.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Small, purpose-built query-filtering helpers.
 
 Kept as plain functions building Q()/ordering by hand rather than adopting

@@ -1,0 +1,38 @@
+/* Wiki page styling (moved here from wiki/page.html) */
+/* Classic wiki-link styling: a resolved link gets a plain
+    dotted underline, a missing/red link is visually distinct
+    (dashed, danger-toned) so it's obvious at a glance which
+    [[Page Name]] links point somewhere real. */
+.wiki-article .wiki-link {
+    color: #0d6efd;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(13, 110, 253, .45);
+}
+.wiki-article .wiki-link:hover {
+    border-bottom-style: solid;
+}
+.wiki-article .wiki-link-missing {
+    color: #b02a37;
+    border-bottom: 1px dashed rgba(176, 42, 55, .55);
+}
+.wiki-article .wiki-link-missing:hover {
+    border-bottom-style: solid;
+}
+.wiki-article .wiki-link-unresolved {
+    color: inherit;
+    border-bottom: 1px dotted rgba(0, 0, 0, .25);
+}
+
+/* Table of contents indentation by heading level (moved from wiki/page.html) */
+.toc-level-1 { margin-left: 0; }
+.toc-level-2 { margin-left: 1rem; }
+.toc-level-3 { margin-left: 2rem; }
+.toc-level-4 { margin-left: 3rem; }
+.toc-level-5 { margin-left: 4rem; }
+.toc-level-6 { margin-left: 5rem; }
+
+/* Wiki maintainers header (moved here from wiki/page.html) */
+.wiki-maintainers-head { font-size: .7rem; }
+
+/* Wiki creator badge (moved here from wiki/page.html) */
+.wiki-creator-badge { font-size: .65rem; }

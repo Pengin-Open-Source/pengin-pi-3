@@ -1,4 +1,6 @@
+# Pengin-Pi-3 — Pengin Open Source
 # util/slug_content_form.py
+#
 # Builds a per-field editing form from a Slug's *content* json (a plain
 # dict of page content like {"hero_title": "...", "features": [...]}),
 # as opposed to util/dynamic_forms.py which builds a form from an
@@ -23,6 +25,12 @@
 # for arbitrary nesting is its own project. That still beats one
 # undifferentiated blob for the whole page: each list/dict field is at
 # least isolated, labeled, and validated independently.
+#
+# Copyright (C) 2026 Tobu Pengin, L.L.C. and contributors
+# Authors:
+#   Stuart Anderson <stuart@tobupengin.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 import json
 import re
 
