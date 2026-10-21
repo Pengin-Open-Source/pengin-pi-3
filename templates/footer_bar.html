@@ -6,7 +6,7 @@
 
             <!-- Box 1: Location - sourced from main.Site via main.context_processors.site_context -->
             <div class="col-lg-4 mb-5 mb-lg-0">
-                <h4 class="text-uppercase fw-bold mb-4 small tracking-wide text-light opacity-75">Location</h4>
+                <h4 class="text-uppercase fw-bold mb-4 small text-light opacity-75">Location</h4>
                 {% if site.address1 %}
                 <p class="lead fs-6 mb-0 text-muted">
                     {{ site.address1 }}{% if site.address2 %}, {{ site.address2 }}{% endif %}<br>
@@ -20,7 +20,7 @@
 
             <!-- Box 2: Social links -->
             <div class="col-lg-4 mb-5 mb-lg-0 text-center">
-                <h4 class="text-uppercase fw-bold mb-4 small tracking-wide text-light opacity-75">Around the Web</h4>
+                <h4 class="text-uppercase fw-bold mb-4 small text-light opacity-75">Around the Web</h4>
                 {% if site.facebook or site.twitter or site.instagram or site.linkedin or site.youtube %}
                 <p class="lead fs-6 mb-0 text-muted d-flex justify-content-center gap-3">
                     {% if site.facebook %}<a class="text-white" href="{{ site.facebook }}"><i class="fab fa-facebook-f"></i></a>{% endif %}
@@ -36,7 +36,7 @@
 
             <!-- Box 3: Phone & communications -->
             <div class="col-lg-4 text-center text-lg-start">
-                <h4 class="text-uppercase fw-bold mb-4 small tracking-wide text-light opacity-75">Phone &amp; Communications</h4>
+                <h4 class="text-uppercase fw-bold mb-4 small text-light opacity-75">Phone &amp; Communications</h4>
                 {% if site.phone or site.webmaster %}
                 <p class="lead fs-6 text-muted">
                     {% if site.phone %}{{ site.phone }}<br>{% endif %}
